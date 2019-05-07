@@ -20,10 +20,9 @@ read_vcf_for_sample <- function(mydb, sample, tool) {
   
   #write a temporary file and read it into VariantAnnotator format
   temp_filename <- tempfile(fileext = ".vcf")
-  write.table(vcf_data, "test.txt")
   writeChar(header, temp_filename)
   colnames(vcf_data)[1] = "#CHROM"
-  suppressWarnings(write.table(vcf_data, file=temp_filename, sep = "\t",
+  suppressWarnings(write.table(vcf_data, file = temp_filename, sep = "\t",
                                row.names=FALSE, quote=FALSE, col.names=TRUE, 
                                append = TRUE))
   vcf <- readVcf(temp_filename)
