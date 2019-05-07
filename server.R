@@ -133,7 +133,9 @@ shinyServer(function(input, output, session) {
     lower_bound <- 0.75
     
     #this colors the control genes gray
-    genecolors <- rep("black", length(xaxis))
+    genecolors <- rep("black",length(xaxis))
+    genecolors[yaxis >= upper_bound] = "#e41a1c"
+    genecolors[yaxis <= lower_bound] = "#377eb8"
 
     if (input$type == 1) {
       #display pandq boundaries
@@ -162,11 +164,11 @@ shinyServer(function(input, output, session) {
         }
       }
       
-      polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
-              c(0, lower_bound,lower_bound, 0), col = "#0000FF80", border=FALSE)
-      polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
-              c(upper_bound, maxlim, maxlim, upper_bound), col = "#FF000080", 
-              border = FALSE)
+      # polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
+              # c(0, lower_bound,lower_bound, 0), col = "#0000FF80", border=FALSE)
+      # polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
+              # c(upper_bound, maxlim, maxlim, upper_bound), col = "#FF000080", 
+              # border = FALSE)
       points(xaxis, as.numeric(yaxis), pch = 16, cex = 0.7, col = genecolors)
       axis(side = 1, at = my_breaks[1:23], tick = FALSE, labels = c(1:22, "X"),
            las = 2)

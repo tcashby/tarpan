@@ -159,7 +159,7 @@ shinyUI(fluidPage(
                   tabPanel("QC Metrics", DT::dataTableOutput("metrics_table")),
                   tabPanel("AutoCN", DT::dataTableOutput("AutoCN")),
                   tabPanel("AutoCNGroups", DT::dataTableOutput("AutoCNGroups")),
-                  tabPanel("Debug", verbatimTextOutput("debug")),
+                  # tabPanel("Debug", verbatimTextOutput("debug")),
                   tabPanel("RCircos", plotOutput("rcircos"))
       )
     )
