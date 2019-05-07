@@ -444,8 +444,6 @@ shinyServer(function(input, output, session) {
         vcf <- make_table(vcf)
         data <- rbind(data, vcf)
       }
-      
-      write.csv(data, "test.csv")
 
       if (input$hide_blank_mutations) {
         data <- data[!(data$symbol %in% ""), ]
@@ -570,7 +568,6 @@ shinyServer(function(input, output, session) {
         circos_mut_data <- circos_mut_data[!(circos_mut_data$breakpoint1_chrom
                                              %in% chr.exclude), ]
       }
-      write.csv(circos_mut_data,"test.csv")
     }
 
     if (nrow(copynumber) > 0) {

@@ -4,7 +4,4 @@
 # ignore *.db for the time being (while still testing)
 *.db
 
-# ignore files being written to disk during execution
-test.csv
-test.txt
 
