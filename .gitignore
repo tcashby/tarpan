@@ -1,0 +1,2 @@
+# ignore *.db for the time being (while still testing)
+*.db
