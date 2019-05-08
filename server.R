@@ -892,14 +892,6 @@ shinyServer(function(input, output, session) {
       dev.off()
     }
   )
-  
-  #execute cleanup steps on application stop
-  onStop(function() {
-    #disconnect from DB
-    dbDisconnect(dbhandle)
-    cat("Disconencted from DB\n")
-    cat("Session stopped\n")
-  })
 })
 
 shadowtext <- function(x, y = NULL, labels, col = 'white', bg = 'black', 
