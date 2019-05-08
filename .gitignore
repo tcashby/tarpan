@@ -17,6 +17,7 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
