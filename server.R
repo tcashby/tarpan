@@ -11,15 +11,16 @@ library(RCircos)
 
 #load utility scripts
 source("utility/read_vcf_for_sample.R")
+source("utility/readConfig.R")
 
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), "latest.db")
+dbhandle <- dbConnect(RSQLite::SQLite(), configSQLiteDB)
 
 #established p and q boundaries
-p <- read.table("data/hg19/pqboundaries.txt", sep="\t", stringsAsFactors = FALSE, 
+p <- read.table(pqDataFilePath, sep="\t", stringsAsFactors = FALSE, 
                 header = TRUE)
 #read in the chromosome sizes for a genome of interest
-chrom_sizes <- read.table("data/hg19/chromsizes.txt", sep = "\t", 
+chrom_sizes <- read.table(chromSizesFilePath, sep = "\t", 
                           stringsAsFactors = FALSE, header = FALSE)
 chrom_sizes <- c(chrom_sizes$V2, 0)
 #cumulative sums of the chromosome sizes
@@ -41,7 +42,7 @@ if (nrow(blacklist) == 0) {
 }
 blacklist$V1[blacklist$V1 %in% "X"] <- "23"
 
-# Define server logic for random distribution application
+# Define server logic for application
 shinyServer(function(input, output, session) {
   #returns all input chromosomes for normalization
   get_chrom_normalization_input <- function() {
@@ -725,7 +726,6 @@ shinyServer(function(input, output, session) {
                                       options = list(paging = FALSE, 
                                                      searching = TRUE), {
     # load the data
-    # query = paste("SELECT a.chrom as 'chrom',a.start as 'start',a.[end] as 'end', a.id as 'id', a.normal_mean as 'normal_mean' ,a.tumor_mean as 'tumor_mean', a.tumor_depth as 'tumor_depth' from GENOM_DEPTH_COMPARE a inner join GENOM_MAIN b on a.main_id = b.main_id where analysis_id = '", input$sample,"'",sep="")
     query <- "select chrom, start, end, id, normal_mean, tumor_mean, "
     query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
     query <- paste0(query, input$sample,"'")
@@ -895,7 +895,7 @@ shinyServer(function(input, output, session) {
 })
 
 shadowtext <- function(x, y = NULL, labels, col = 'white', bg = 'black', 
-                       theta = seq(0, 2*pi, length.out=50), r=0.1, ... ) {
+                       theta = seq(0, 2 * pi, length.out = 50), r = 0.1, ... ) {
     xy <- xy.coords(x, y)
     xo <- r * strwidth('A')
     yo <- r * strheight('A')

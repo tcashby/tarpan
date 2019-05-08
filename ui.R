@@ -7,7 +7,7 @@ library(DBI)
 library(RSQLite)
 
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), "latest.db")
+dbhandle <- dbConnect(RSQLite::SQLite(), SQLLiteDBFilePath)
 
 #get the sample ids in the database
 res <- dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")
@@ -156,8 +156,8 @@ shinyUI(fluidPage(
                   tabPanel("Structural Variants", 
                            DT::dataTableOutput("manta_table")),
                   tabPanel("QC Metrics", DT::dataTableOutput("metrics_table")),
-                  tabPanel("AutoCN", DT::dataTableOutput("AutoCN")),
-                  tabPanel("AutoCNGroups", DT::dataTableOutput("AutoCNGroups")),
+                  tabPanel("Auto CN", DT::dataTableOutput("AutoCN")),
+                  tabPanel("Auto CN Groups", DT::dataTableOutput("AutoCNGroups")),
                   # tabPanel("Debug", verbatimTextOutput("debug")),
                   tabPanel("RCircos", plotOutput("rcircos"))
       )
