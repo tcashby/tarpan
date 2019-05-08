@@ -136,7 +136,6 @@ shinyUI(fluidPage(
         textInput("currentchrom", label = "", value = -1),
         textInput("currentregion", label = "", value = "ALL")
       ),
-      downloadButton('downloadData', 'Download'),
       downloadButton('downloadCopyNumberPlot', 'Download CN Plot'),
       conditionalPanel(
       	condition = "input.showsnps == 1",
