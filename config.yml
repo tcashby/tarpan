@@ -1,0 +1,3 @@
+default:
+  genomeBuild: "hg19"
+  SQLiteDB: "latest.db"

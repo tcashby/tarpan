@@ -3,6 +3,7 @@ library(shiny)
 library(shinyBS)
 library(RColorBrewer)
 library(DT)
+library(config)
 #sqlite libraries
 library(DBI)
 library(RSQLite)
@@ -12,14 +13,35 @@ library(RCircos)
 #load utility scripts
 source("utility/read_vcf_for_sample.R")
 
+#get genome build from config file
+configGenomeBuild <- config::get("genomeBuild")
+if (!(configGenomeBuild %in% c("hg19", "hg38"))) {
+  stop("Incorrect or no reference genome build defined.")
+}
+
+#get path of SQLite DB
+configSQLiteDB <- config::get("SQLiteDB")
+SQLLiteDBFilePath <-file.path(configSQLiteDB)
+if (!file.exists(SQLLiteDBFilePath)) {
+  stop("SQLite DB file not found.")
+}
+
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), "latest.db")
+dbhandle <- dbConnect(RSQLite::SQLite(), configSQLiteDB)
 
 #established p and q boundaries
-p <- read.table("data/hg19/pqboundaries.txt", sep="\t", stringsAsFactors = FALSE, 
+pqDataFilePath <- file.path("data", configGenomeBuild, "pqboundaries.txt")
+if (!file.exists(pqDataFilePath)) {
+  stop("p/q boundaries file not found.")
+}
+p <- read.table(pqDataFilePath, sep="\t", stringsAsFactors = FALSE, 
                 header = TRUE)
 #read in the chromosome sizes for a genome of interest
-chrom_sizes <- read.table("data/hg19/chromsizes.txt", sep = "\t", 
+chromSizesFilePath <- file.path("data", configGenomeBuild, "chromsizes.txt")
+if (!file.exists(pqDataFilePath)) {
+  stop("Chromosome sizes file not found.")
+}
+chrom_sizes <- read.table(chromSizesFilePath, sep = "\t", 
                           stringsAsFactors = FALSE, header = FALSE)
 chrom_sizes <- c(chrom_sizes$V2, 0)
 #cumulative sums of the chromosome sizes
