@@ -63,7 +63,7 @@ if (nrow(blacklist) == 0) {
 }
 blacklist$V1[blacklist$V1 %in% "X"] <- "23"
 
-# Define server logic for random distribution application
+# Define server logic for application
 shinyServer(function(input, output, session) {
   #returns all input chromosomes for normalization
   get_chrom_normalization_input <- function() {
