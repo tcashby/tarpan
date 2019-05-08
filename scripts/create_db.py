@@ -7,7 +7,7 @@
 """
 
 # DB Create
-# create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<BED_FILE>" -groupbed "<BED_FILE>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
+# create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
 
 import sys
 from inspect import getsourcefile

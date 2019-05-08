@@ -46,7 +46,7 @@ class arg_parser(object):
         #------------------------------------
 
         self.bicond_args = [['bedfile','bedtype'],['mutfile','muttool'],['svfile','svtool']]
-        self.file_args = ['bedfile','targetbed','groupbed','mutfile','svfile','snp','met','depth','log']
+        self.file_args = ['bedfile','targetbed','groupbed','blacklist','mutfile','svfile','snp','met','depth','log']
         
         #------------------------------------        
         self.__parser.add_argument("-db", "--db")
@@ -55,6 +55,8 @@ class arg_parser(object):
         self.__parser.add_argument("-pipeline", "--pipeline")
         self.__parser.add_argument("-targetbed", "--targetbed")
         self.__parser.add_argument("-groupbed", "--groupbed")
+        self.__parser.add_argument("-blacklist", "--blacklist")        
+        
         self.__parser.add_argument("-bedfile", "--bedfile", action='append')
         self.__parser.add_argument("-bedtype", "--bedtype", action='append')
         
@@ -84,7 +86,7 @@ class arg_parser(object):
     def checkDbCreateArgs(self):
         # check arguments for database creation
         
-        required_args = ['db','refgen','pipeline','targetbed','groupbed']
+        required_args = ['db','refgen','targetbed','groupbed']
 
         # check required arguments (false = fail)
         if not self.__checkArgsExist(required_args):
@@ -105,7 +107,7 @@ class arg_parser(object):
         # check arguments for database update
         
         required_args = ['db']
-        possible_args = ['refgen','pipeline','targetbed','groupbed','bedfile']
+        possible_args = ['refgen','pipeline','targetbed','groupbed','blacklist','bedfile']
         
         # check required arguments (false = fail)
         if not self.__checkArgsExist(required_args):
@@ -130,11 +132,17 @@ class arg_parser(object):
         
         #required_args = ['db','sampid','mutfile','muttool','svfile','svtool','snp','met','depth']        
         #required_args = ['db','sampid','mutfile','muttool']  
-        required_args = ['db','sampid','mutfile','muttool','svfile','svtool','snp','depth']  
+        #required_args = ['db','sampid','mutfile','muttool','svfile','svtool','snp','depth']  
+        required_args = ['db','sampid']
+        possible_args = ['mutfile','svfile','snp','met','depth']
         
         # check required arguments (false = fail)
         if not self.__checkArgsExist(required_args):
             raise Exception('Required Args Not Provided. Entry Creation Aborted')          
+        
+        # check at least one argument added
+        if not self.__checkPossibleArgExists(possible_args):
+            raise Exception('No Files Added to Insert. Entry Creation Aborted')         
         
         # check database exists (false = fail)
         if not self.__checkDatabaseExists():
@@ -335,7 +343,11 @@ class arg_parser(object):
     @property    
     def groupBed(self):
         return self._args['groupbed']    
-
+    
+    @property    
+    def blacklist(self):
+        return self._args['blacklist']    
+    
     @property    
     def sampleID(self):
         return self._args['sampid']

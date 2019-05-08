@@ -23,6 +23,7 @@ class db_processor(object):
 #        print(args.pipeline)        
 #        print(args.targetBed)
 #        print(args.groupBed)
+#        print(args.blacklist)        
 #        print(args.bedFile)
 #        print(args.bedType)        
 #        print(args.current_dir)
@@ -126,6 +127,17 @@ class db_processor(object):
                 self.__invalid_files[bedType] = self.__args.groupBed
             else:
                 self.__files[bedType] = group_data
+                
+        if self.__args.blacklist:
+
+            bedType = 'blacklist'
+
+            blacklist_data = processor.processBed(bedType, self.__args.blacklist)
+            
+            if blacklist_data is None:
+                self.__invalid_files[bedType] = self.__args.blacklist
+            else:
+                self.__files[bedType] = blacklist_data                
         
         if self.__args.bedFile:
             
