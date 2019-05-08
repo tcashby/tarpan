@@ -20,7 +20,7 @@ if (!file.exists(pqDataFilePath)) {
 
 #get path of SQLite DB
 configSQLiteDB <- config::get("SQLiteDB")
-SQLLiteDBFilePath <-file.path(configSQLiteDB)
-if (!file.exists(SQLLiteDBFilePath)) {
-  stop("SQLite DB file not found.")
-}
+# SQLLiteDBFilePath <-file.path(configSQLiteDB)
+# if (!file.exists(SQLLiteDBFilePath)) {
+#   stop("SQLite DB file not found.")
+# }

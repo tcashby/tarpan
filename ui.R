@@ -6,8 +6,10 @@ library(DT)
 library(DBI)
 library(RSQLite)
 
+source("utility/readConfig.R")
+
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), SQLLiteDBFilePath)
+dbhandle <- dbConnect(RSQLite::SQLite(), configSQLiteDB)
 
 #get the sample ids in the database
 res <- dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")

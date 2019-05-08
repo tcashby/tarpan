@@ -856,8 +856,19 @@ shinyServer(function(input, output, session) {
                                       options = list(paging = FALSE, 
                                                      searching = FALSE), {
     #load the data
-    query <- "select normal_mean,tumor_mean from genom_depth"
+    query <- paste0("SELECT * from genom_depth where sample_id = '",
+                    input$sample,"'")
     data <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+
+    #hide blacklist by default
+    if (!input$show_blacklist) {
+      for (i in 1:nrow(blacklist)) {
+        data <- data[!(data$start >= blacklist$V2[i] & 
+                data$end <= blacklist$V3[i] &
+                data$chrom %in% blacklist$V1[i]), ]
+      }
+    }
+
     res <- data.frame(mean_normal_depth = mean(data$normal_mean), 
                       mean_tumor_depth = mean(data$tumor_mean))
     res
