@@ -7,10 +7,11 @@ library(DBI)
 library(RSQLite)
 
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), "latest.db")
+dbhandle <- dbConnect(RSQLite::SQLite(), SQLLiteDBFilePath)
 
 #get the sample ids in the database
 res <- dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")
+dbDisconnect(dbhandle)
 options(shiny.sanitize.errors = TRUE)
 
 # Define UI for application that draws a histogram
