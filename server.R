@@ -61,7 +61,6 @@ blacklist <- dbGetQuery(dbhandle, query, stringsAsFactors = F)
 if (nrow(blacklist) == 0) {
   blacklist <- data.frame(V1 = "N", V2 = -1, V3 = -1, stringsAsFactors = FALSE)
 }
-
 blacklist$V1[blacklist$V1 %in% "X"] <- "23"
 
 # Define server logic for random distribution application
@@ -155,7 +154,9 @@ shinyServer(function(input, output, session) {
     lower_bound <- 0.75
     
     #this colors the control genes gray
-    genecolors <- rep("black", length(xaxis))
+    genecolors <- rep("black",length(xaxis))
+    genecolors[yaxis >= upper_bound] = "#e41a1c"
+    genecolors[yaxis <= lower_bound] = "#377eb8"
 
     if (input$type == 1) {
       #display pandq boundaries
@@ -184,11 +185,11 @@ shinyServer(function(input, output, session) {
         }
       }
       
-      polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
-              c(0, lower_bound,lower_bound, 0), col = "#0000FF80", border=FALSE)
-      polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
-              c(upper_bound, maxlim, maxlim, upper_bound), col = "#FF000080", 
-              border = FALSE)
+      # polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
+              # c(0, lower_bound,lower_bound, 0), col = "#0000FF80", border=FALSE)
+      # polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
+              # c(upper_bound, maxlim, maxlim, upper_bound), col = "#FF000080", 
+              # border = FALSE)
       points(xaxis, as.numeric(yaxis), pch = 16, cex = 0.7, col = genecolors)
       axis(side = 1, at = my_breaks[1:23], tick = FALSE, labels = c(1:22, "X"),
            las = 2)
@@ -882,108 +883,6 @@ shinyServer(function(input, output, session) {
                       mean_tumor_depth = mean(data$tumor_mean))
     res
   }))
-
-  output$downloadData <- downloadHandler(
-    filename = function() { 
-      if (input$type == 1)
-        paste(input$sample, ".csv", sep = "")
-      else
-        paste(input$sample, "_chrom_", input$chromnum, ".csv", sep = "" )
-    },
-    content = function(file) {
-      #load the data
-      query <- "SELECT a.chrom as 'chrom',a.start as 'start',a.[end] as 'end', "
-      query <- paste0(query, "a.id as 'id', a.normal_mean as 'normal_mean', ")
-      query <- paste0(query, "a.tumor_mean as 'tumor_mean', ")
-      query <- paste0(query, "a.tumor_depth as 'tumor_depth' ")
-      query <- paste0(query, "from GENOM_DEPTH_COMPARE a inner join ")
-      query <- paste0(query, "GENOM_MAIN b on a.main_id = b.main_id ")
-      query <- paste0(query, "where analysis_id = '", input$sample,"'")
-      x <- sqlQuery(dbhandle, query, stringsAsFactors = FALSE)
-      #remove the sex chromosomes and where the mean == 0
-      x <- x[x$tumor_mean != 0, ]
-      x <- x[x$chrom != "Y", ]
-      x$chrom[x$chrom == "X"] <- "23"
-
-      #hide blacklist genes unless specified otherwise
-      if (!input$show_blacklist) {
-        for (i in 1:nrow(blacklist)) {
-          x <- x[!(x$start >= blacklist$V2[i] & x$end <= blacklist$V3[i] &
-                     x$chrom %in% blacklist$V1[i]), ]
-        }
-      }
-
-      #sort by chrom, start
-      x <- x[order(x$chrom, x$start), ]
-
-      if (input$type != 1) {
-        #set up x-axis
-        xaxis <- x$start[x$chrom == input$chromnum]
-
-        #set up y-axis
-        if (!input$chromnorm) {
-          n_fac <- mean(x$normal_mean)
-          t_fac <- mean(x$tumor_mean)
-          yaxis <- (x$tumor_mean[x$chrom == input$chromnum] / t_fac) / 
-            (x$normal_mean[x$chrom == input$chromnum] / n_fac)
-        } else {
-          #get the user selected chromosomes for normalization
-          chromlist <- get_chrom_normalization_input()
-
-          if (!(length(chromlist))) {
-            n_fac <- mean(x$normal_mean)
-            t_fac <- mean(x$tumor_mean)
-            yaxis <- (x$tumor_mean[x$chrom == input$chromnum] / t_fac) / 
-              (x$normal_mean[x$chrom == input$chromnum] / n_fac)
-          } else {
-            n_fac <- mean(x$normal_mean[x$chrom %in% chromlist])
-            t_fac <- mean(x$tumor_mean[x$chrom %in% chromlist])
-            yaxis <- (x$tumor_mean[x$chrom == input$chromnum] / t_fac) / 
-              (x$normal_mean[x$chrom == input$chromnum] / n_fac)
-          }
-        }
-
-        x <- x[x$chrom == input$chromnum, ]
-      } else {
-        #set up x-axis
-        xaxis <- x$start + cumulative_chrom_sizes[as.numeric(x$chrom)]
-        #set up y-axis
-        #if there's no normalization flag, generate a base normalization
-        if (!input$chromnorm) { 
-          n_fac <- mean(x$normal_mean)
-          t_fac <- mean(x$tumor_mean)
-          yaxis <- (x$tumor_mean / t_fac) / (x$normal_mean / n_fac)
-        } else { #otherwise generate via chromosomes
-          #get the user selected chromosomes for normalization
-          chromlist <- get_chrom_normalization_input()
-
-          if (!(length(chromlist))) {
-            n_fac <- mean(x$normal_mean)
-            t_fac <- mean(x$tumor_mean)
-            yaxis <- (x$tumor_mean / t_fac) / (x$normal_mean / n_fac)
-          } else {
-            n_fac <- mean(x$normal_mean[x$chrom %in% chromlist])
-            t_fac <- mean(x$tumor_mean[x$chrom %in% chromlist])
-            yaxis <- (x$tumor_mean / t_fac) / (x$normal_mean / n_fac)
-          }
-        }
-      }
-
-      #table output
-      chrom <- x$chrom
-      chrom[chrom == "23"] <- "X"
-      start <- x$start
-      end <- x$end
-      id <- x$id
-      normal_mean <- x$normal_mean
-      tumor_mean <- x$tumor_mean
-      tumor_depth <- yaxis
-
-      result <- cbind(chrom, start, end, id, normal_mean, 
-                      tumor_mean,tumor_depth)
-      write.csv(result, file, row.names = FALSE)
-    }
-  )
 
   output$downloadCopyNumberPlot <- downloadHandler(
     filename = function() { 

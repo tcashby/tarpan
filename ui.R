@@ -136,7 +136,6 @@ shinyUI(fluidPage(
         textInput("currentchrom", label = "", value = -1),
         textInput("currentregion", label = "", value = "ALL")
       ),
-      downloadButton('downloadData', 'Download'),
       downloadButton('downloadCopyNumberPlot', 'Download CN Plot'),
       conditionalPanel(
       	condition = "input.showsnps == 1",
@@ -159,7 +158,7 @@ shinyUI(fluidPage(
                   tabPanel("QC Metrics", DT::dataTableOutput("metrics_table")),
                   tabPanel("AutoCN", DT::dataTableOutput("AutoCN")),
                   tabPanel("AutoCNGroups", DT::dataTableOutput("AutoCNGroups")),
-                  tabPanel("Debug", verbatimTextOutput("debug")),
+                  # tabPanel("Debug", verbatimTextOutput("debug")),
                   tabPanel("RCircos", plotOutput("rcircos"))
       )
     )
