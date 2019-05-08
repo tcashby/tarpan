@@ -30,7 +30,7 @@ source("install.R")
 
 4. Assuming the dependencies installed correctly, you should now be able to run the application in R Studio.
 
-## Requirements
+## Limitations
 
 Due to limitations of SQLite, databases can not be created on NSF/SMB mounted volumes.
 
