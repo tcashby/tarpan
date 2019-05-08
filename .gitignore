@@ -4,4 +4,16 @@
 # ignore *.db for the time being (while still testing)
 *.db
 
+### R ###
+# History files
+.Rhistory
+.Rapp.history
 
+# Session Data files
+.RData
+
+# User-specific files
+.Ruserdata
+
+# RStudio files
+.Rproj.user/
