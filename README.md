@@ -1,11 +1,38 @@
-# Setup Instructions:
-1) Open server.r, ui.r, install.r in Rstudio
-2) Run install.r to install needed packages
-3) Run app, you should see the Viewer
+<p align="center">
+  <img src="/www/LogoBig.jpg" width="25%" height="25%">
+</p>
+
+## 
+TarPan Viewer is a tool used to visually inspect targeted panel sequencing data.
+
+
+## Built With
+- [R](https://www.r-project.org/)
+- [R Shiny](https://shiny.rstudio.com/)
+- [Python](https://www.python.org/)
+
+## Dependencies
+The easiest and fastest way to run TarPan is to install [R Studio](https://www.rstudio.com/). 
+
+## Installation of TarPan Viewer
+1. Clone the repository
+
+```sh
+git clone https://github.com/tcashby/tarpan.git
+```
+2. Create a new R Studio project in the cloned directory and open ```ui.r```, ```server.r```, and ```install.r```.
+
+3. Install dependencies
+
+```sh
+source("install.R")
+```
+
+4. Assuming the dependencies installed correctly, you should now be able to run the application in R Studio.
 
 ## Requirements
 
-Lacks support for NSF/SMB mounted volumes
+Due to limitations of SQLite, databases can not be created on NSF/SMB mounted volumes.
 
 ## Scripts
 
