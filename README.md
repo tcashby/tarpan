@@ -38,24 +38,25 @@ Due to limitations of SQLite, databases can not be created on NSF/SMB mounted vo
 
 **DB Create**
 ```
-create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_FILE>" -groupbed "<GROUP_FILE>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
+create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
 
-required_args = ['db','refgen','pipeline','targetbed','groupbed']
+required_args = ['db','refgen','targetbed','groupbed']
 ```
 
 **DB Update**
 ```
-update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_FILE>" -groupbed "<GROUP_FILE>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
+update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
 
 required_args = ['db']
-possible_args = ['refgen','pipeline','targetbed','groupbed']
+possible_args = ['refgen','pipeline','targetbed','groupbed','blacklist','bedfile']
 ```
 
 **Entry Create**
 ```
 create_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>" -mutfile "<MUTATION file>" -muttool "<MUTATION tool>" -mutfile "<MUTATION2 file>" -muttool "<MUTATION2 tool>" -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>" -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>" -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>" 
 
-required_args = ['db','sampid','mutfile','muttool'] 
+required_args = ['db','sampid']
+possible_args = ['mutfile','svfile','snp','met','depth'] 
 ```
 
 **Entry Update**
