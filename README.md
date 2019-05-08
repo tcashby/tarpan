@@ -7,7 +7,7 @@
 
 Lacks support for NSF/SMB mounted volumes
 
-## Scrips
+## Scripts
 
 **DB Create**
 ```
