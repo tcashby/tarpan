@@ -724,7 +724,6 @@ shinyServer(function(input, output, session) {
                                       options = list(paging = FALSE, 
                                                      searching = TRUE), {
     # load the data
-    # query = paste("SELECT a.chrom as 'chrom',a.start as 'start',a.[end] as 'end', a.id as 'id', a.normal_mean as 'normal_mean' ,a.tumor_mean as 'tumor_mean', a.tumor_depth as 'tumor_depth' from GENOM_DEPTH_COMPARE a inner join GENOM_MAIN b on a.main_id = b.main_id where analysis_id = '", input$sample,"'",sep="")
     query <- "select chrom, start, end, id, normal_mean, tumor_mean, "
     query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
     query <- paste0(query, input$sample,"'")
@@ -996,7 +995,7 @@ shinyServer(function(input, output, session) {
 })
 
 shadowtext <- function(x, y = NULL, labels, col = 'white', bg = 'black', 
-                       theta = seq(0, 2*pi, length.out=50), r=0.1, ... ) {
+                       theta = seq(0, 2 * pi, length.out = 50), r = 0.1, ... ) {
     xy <- xy.coords(x, y)
     xo <- r * strwidth('A')
     yo <- r * strheight('A')
