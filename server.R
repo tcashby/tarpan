@@ -685,6 +685,8 @@ shinyServer(function(input, output, session) {
     x$end <- as.numeric(x$end)
     x$normal_mean <- as.numeric(x$normal_mean)
     x$tumor_mean <- as.numeric(x$tumor_mean)
+    #remove chr prefix if it exists
+    x$chrom <- gsub("chr","",x$chrom)
 
     #remove the sex chromosomes and where the mean == 0
     x <- x[x$tumor_mean != 0, ]
