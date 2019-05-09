@@ -7,9 +7,11 @@ library(DBI)
 library(RSQLite)
 
 source("utility/readConfig.R")
+#get database from config file
+databases <- config::get("SQLiteDB")
 
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), configSQLiteDB)
+dbhandle <- dbConnect(RSQLite::SQLite(), databases[1])
 
 #get the sample ids in the database
 res <- dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")
@@ -26,6 +28,10 @@ shinyUI(fluidPage(
   sidebarLayout(
     sidebarPanel(
       width = 2,
+      # h4("Database"),
+      selectInput("database", width = '100%',
+                           "Database:", selected = as.character(databases[1]),
+                           c(unique(as.character(databases)))),
       h4("Data Filtering Options"),
       checkboxInput("type", "Show all chromosomes", value = 1, width = NULL),
       conditionalPanel(

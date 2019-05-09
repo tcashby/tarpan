@@ -11,10 +11,12 @@ library(RCircos)
 
 #load utility scripts
 source("utility/read_vcf_for_sample.R")
-source("utility/readConfig.R")
+
+#get database from config file
+databases <- config::get("SQLiteDB")
 
 #create handle to sqlite file
-dbhandle <- dbConnect(RSQLite::SQLite(), configSQLiteDB)
+dbhandle <- dbConnect(RSQLite::SQLite(), databases[1])
 
 #established p and q boundaries
 p <- read.table(pqDataFilePath, sep="\t", stringsAsFactors = FALSE, 
@@ -44,6 +46,14 @@ blacklist$V1[blacklist$V1 %in% "X"] <- "23"
 
 # Define server logic for application
 shinyServer(function(input, output, session) {
+  #when the database changes redraw
+  observeEvent(input$database, {
+    dbDisconnect(dbhandle)
+    dbhandle <<- dbConnect(RSQLite::SQLite(), input$database)
+    res = dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")
+    updateSelectInput(session,"sample",label="Sample:",choices=res$sample_id,selected=res$sample_id[1])
+  })
+
   #returns all input chromosomes for normalization
   get_chrom_normalization_input <- function() {
     if (!input$chromnorm) {
