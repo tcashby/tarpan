@@ -11,6 +11,7 @@ library(RCircos)
 
 #load utility scripts
 source("utility/read_vcf_for_sample.R")
+source("utility/readConfig.R")
 
 #get database from config file
 databases <- config::get("SQLiteDB")
@@ -51,7 +52,15 @@ shinyServer(function(input, output, session) {
     dbDisconnect(dbhandle)
     dbhandle <<- dbConnect(RSQLite::SQLite(), input$database)
     res = dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")
+
+    #update sample list
     updateSelectInput(session,"sample",label="Sample:",choices=res$sample_id,selected=res$sample_id[1])
+
+    #update gene groups
+    query <- "SELECT chrom, start, end, id from GENOM_BEDFILES where type = 'groups'"
+    g <<- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    #remove chrom prefix
+    g$chrom <<- gsub("chr", "", g$chrom)
   })
 
   #returns all input chromosomes for normalization
@@ -174,11 +183,6 @@ shinyServer(function(input, output, session) {
         }
       }
       
-      # polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
-              # c(0, lower_bound,lower_bound, 0), col = "#0000FF80", border=FALSE)
-      # polygon(c(0, 0, cumulative_chrom_sizes[24], cumulative_chrom_sizes[24]),
-              # c(upper_bound, maxlim, maxlim, upper_bound), col = "#FF000080", 
-              # border = FALSE)
       points(xaxis, as.numeric(yaxis), pch = 16, cex = 0.7, col = genecolors)
       axis(side = 1, at = my_breaks[1:23], tick = FALSE, labels = c(1:22, "X"),
            las = 2)
@@ -791,7 +795,6 @@ shinyServer(function(input, output, session) {
     #define groups
     results <- c()
     for (i in 1:dim(g)[1]) {
-      print(i)
       cn_status <- x$cn_status[(x$start >= g$start[i] & x$end <= g$end[i] &
                                   x$chrom %in% g$chrom[i])]
       snp_status <- snp$snp_diff[(snp$pos >= g$start[i] & snp$pos <= g$end[i] &
