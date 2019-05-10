@@ -14,6 +14,8 @@ TarPan Viewer is a tool used to visually inspect targeted panel sequencing data.
 ## Dependencies
 The easiest and fastest way to run TarPan is to install [R Studio](https://www.rstudio.com/). 
 
+Python 3.x + Pandas
+
 ## Installation of TarPan Viewer
 1. Clone the repository
 
@@ -35,6 +37,28 @@ source("install.R")
 Due to limitations of SQLite, databases can not be created on NSF/SMB mounted volumes.
 
 ## Scripts
+
+| Argument | Description |
+| -------- | ----------- |
+| `-refgen`	| Reference Genome	|
+| `-pipeline`	| Pipeline Name	|
+| `-targetbed`	| Target Bed File	|
+| `-groupbed`	| Group Bed File	|
+| `-blacklist`	| Blacklist Bed File	|
+| `-bedfile`	| Other Bed File	|
+| `-bedtype`	| Other Bed File Type	|
+| `-sampid`	| Sample ID	|
+| `-normid`	| Normal ID	|
+| `-mutfile`	| Mutation File	|
+| `-muttool`	| Mutation File Tool	|
+| `-svfile`	| Structural Variant File	|
+| `-svtool`	| Structural Variant File Tool	|
+| `-snp`	| SNP File	|
+| `-met`	| Metrics File	|
+| `-depth`	| Depth File	|
+| `-log`	| Log File	|
+| `-sex`	| Patient Sex	|
+| `-patid`	| Patient Identifier	|
 
 **DB Create**
 ```
