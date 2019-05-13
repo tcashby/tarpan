@@ -20,7 +20,7 @@ databases <- config::get("SQLiteDB")
 dbhandle <- dbConnect(RSQLite::SQLite(), databases[1])
 
 #established p and q boundaries
-p <- read.table(pqDataFilePath, sep="\t", stringsAsFactors = FALSE, 
+pq <- read.table(pqDataFilePath, sep="\t", stringsAsFactors = FALSE, 
                 header = TRUE)
 #read in the chromosome sizes for a genome of interest
 chrom_sizes <- read.table(chromSizesFilePath, sep = "\t", 
@@ -33,12 +33,13 @@ cumulative_chrom_sizes <- cumulative_chrom_sizes[1:25]
 
 #read groups from database
 query <- "SELECT chrom, start, end, id from GENOM_BEDFILES where type = 'groups'"
-g <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+genome_bed <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
 #remove chrom prefix
-g$chrom <- gsub("chr", "", g$chrom)
+genome_bed$chrom <- gsub("chr", "", genome_bed$chrom)
 
 #genes in the blacklist bed file will be hidden by default
-query <- "SELECT chrom, start, end, id from GENOM_BEDFILES where type = 'blacklist'"
+query <- "SELECT chrom, start, end, id from GENOM_BEDFILES "
+query <- paste0(query, "where type = 'blacklist'")
 blacklist <- dbGetQuery(dbhandle, query, stringsAsFactors = F)
 if (nrow(blacklist) == 0) {
   blacklist <- data.frame(V1 = "N", V2 = -1, V3 = -1, stringsAsFactors = FALSE)
@@ -54,13 +55,15 @@ shinyServer(function(input, output, session) {
     res = dbGetQuery(dbhandle, "SELECT sample_id from GENOM_SAMPLE")
 
     #update sample list
-    updateSelectInput(session,"sample",label="Sample:",choices=res$sample_id,selected=res$sample_id[1])
+    updateSelectInput(session, "sample", label="Sample:", 
+                      choices = res$sample_id, selected = res$sample_id[1])
 
     #update gene groups
-    query <- "SELECT chrom, start, end, id from GENOM_BEDFILES where type = 'groups'"
-    g <<- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    query <- "SELECT chrom, start, end, id from GENOM_BEDFILES "
+    query <- paste0(query, "where type = 'groups'")
+    genome_bed <<- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
     #remove chrom prefix
-    g$chrom <<- gsub("chr", "", g$chrom)
+    genome_bed$chrom <<- gsub("chr", "", genome_bed$chrom)
   })
 
   #returns all input chromosomes for normalization
@@ -86,48 +89,52 @@ shinyServer(function(input, output, session) {
     query <- "SELECT chrom, start, end, id, normal_mean, tumor_mean, "
     query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
     query <- paste0(query, input$sample,"'")
-    x <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    genome_depth <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
     #cast to proper data types
-    x$start <- as.numeric(x$start)
-    x$end <- as.numeric(x$end)
-    x$normal_mean <- as.numeric(x$normal_mean)
-    x$tumor_mean <- as.numeric(x$tumor_mean)
+    genome_depth$start <- as.numeric(genome_depth$start)
+    genome_depth$end <- as.numeric(genome_depth$end)
+    genome_depth$normal_mean <- as.numeric(genome_depth$normal_mean)
+    genome_depth$tumor_mean <- as.numeric(genome_depth$tumor_mean)
 
     #if the chr prefix is on chrom, remove it
-    x$chrom <- gsub("chr", "", x$chrom)
+    genome_depth$chrom <- gsub("chr", "", genome_depth$chrom)
 
     #remove the sex chromosomes and where the mean == 0
-    x <- x[x$tumor_mean != 0, ]
-    x <- x[x$chrom != "Y", ]
-    x$chrom[x$chrom %in% "X"] <- "23"
+    genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
+    genome_depth <- genome_depth[genome_depth$chrom != "Y", ]
+    genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
 
     #sort by chrom, start
-    x <- x[order(x$chrom, x$start), ]
+    genome_depth <- genome_depth[order(genome_depth$chrom, genome_depth$start), ]
 
     #this hides genes on the blacklist
     if (!input$show_blacklist) {
       for (i in 1:nrow(blacklist)) {
-        x <- x[!(x$start >= blacklist$V2[i] & 
-                x$end <= blacklist$V3[i] &
-                x$chrom %in% blacklist$V1[i]), ]
+        genome_depth <- genome_depth[!(genome_depth$start >= blacklist$V2[i] & 
+                genome_depth$end <= blacklist$V3[i] &
+                genome_depth$chrom %in% blacklist$V1[i]), ]
       }
     }
   
     #set up x-axis
-    xaxis <- x$start + cumulative_chrom_sizes[as.numeric(x$chrom)]
+    xaxis <- genome_depth$start + 
+      cumulative_chrom_sizes[as.numeric(genome_depth$chrom)]
     #set up y-axis, if there's no normalization flag, 
     #generate a base normalization
 
     #if tumor depth is set in the database, use those values initially
-    if (!input$chromnorm && length(x$tumor_depth[!is.na(x$tumor_depth)]) > 0) {
-      x <- x[!is.na(x$tumor_depth), ]
-      xaxis <- x$start + cumulative_chrom_sizes[as.numeric(x$chrom)]
-      yaxis <- x$tumor_depth
+    if (!input$chromnorm && 
+        length(genome_depth$tumor_depth[!is.na(genome_depth$tumor_depth)]) > 0) {
+      genome_depth <- genome_depth[!is.na(genome_depth$tumor_depth), ]
+      xaxis <- genome_depth$start + 
+        cumulative_chrom_sizes[as.numeric(genome_depth$chrom)]
+      yaxis <- genome_depth$tumor_depth
     } else {    
       chromlist <- get_chrom_normalization_input()
-      n_fac <- mean(x$normal_mean[x$chrom %in% chromlist])
-      t_fac <- mean(x$tumor_mean[x$chrom %in% chromlist])
-      yaxis <- (x$tumor_mean / t_fac) / (x$normal_mean / n_fac)
+      n_fac <- mean(genome_depth$normal_mean[genome_depth$chrom %in% chromlist])
+      t_fac <- mean(genome_depth$tumor_mean[genome_depth$chrom %in% chromlist])
+      yaxis <- (genome_depth$tumor_mean / t_fac) /
+        (genome_depth$normal_mean / n_fac)
     }
 
     #set min and max limits
@@ -152,7 +159,7 @@ shinyServer(function(input, output, session) {
     lower_bound <- 0.75
     
     #this colors the control genes gray
-    genecolors <- rep("black",length(xaxis))
+    genecolors <- rep("black", length(xaxis))
     genecolors[yaxis >= upper_bound] = "#e41a1c"
     genecolors[yaxis <= lower_bound] = "#377eb8"
 
@@ -160,7 +167,7 @@ shinyServer(function(input, output, session) {
       #display pandq boundaries
       pandq <- c()
       if (input$pandq) {
-        pandq <- p$pqbound + cumulative_chrom_sizes[as.numeric(p$chrom)]
+        pandq <- pq$pqbound + cumulative_chrom_sizes[as.numeric(pq$chrom)]
       }
 
       #count chromosome label positions
@@ -174,11 +181,13 @@ shinyServer(function(input, output, session) {
       for (i in 1:23) {
         if (i %% 2 == 0) {
           polygon(c(cumulative_chrom_sizes[i], cumulative_chrom_sizes[i], 
-                    cumulative_chrom_sizes[i + 1], cumulative_chrom_sizes[i + 1]),
+                    cumulative_chrom_sizes[i + 1], 
+                    cumulative_chrom_sizes[i + 1]),
                   c(0, maxlim, maxlim, 0), col = "#d9d9d9", border = FALSE)
         } else {
           polygon(c(cumulative_chrom_sizes[i], cumulative_chrom_sizes[i], 
-                    cumulative_chrom_sizes[i + 1], cumulative_chrom_sizes[i + 1]),
+                    cumulative_chrom_sizes[i + 1], 
+                    cumulative_chrom_sizes[i + 1]),
                   c(0, maxlim, maxlim, 0), col = "#f0f0f0", border = FALSE)
         }
       }
@@ -193,8 +202,8 @@ shinyServer(function(input, output, session) {
       }
     } else {
       #set up x-axis
-      xaxis <- x$start[x$chrom == input$chromnum]
-      yaxis <- yaxis[x$chrom == input$chromnum]
+      xaxis <- genome_depth$start[genome_depth$chrom == input$chromnum]
+      yaxis <- yaxis[genome_depth$chrom == input$chromnum]
 
       genecolors <- rep("black", length(xaxis))
       pchtype <- rep(21, length(xaxis))
@@ -202,8 +211,9 @@ shinyServer(function(input, output, session) {
       #set a common boundary so the aspect ratio will remain constant
       boundary <- 100000
       if (input$continuous & input$showlast) {
-        plot(NA, axes = FALSE, ylim = c(-0.25, maxlim + 1), xlim = c(0, boundary),
-             xlab = paste("Chromosome", input$chromnum), ylab = "Mean Ratio")
+        plot(NA, axes = FALSE, ylim = c(-0.25, maxlim + 1), 
+             xlim = c(0, boundary), xlab = paste("Chromosome", input$chromnum), 
+             ylab = "Mean Ratio")
       } else {
         plot(NA, axes = FALSE, ylim = c(-0.25, maxlim), xlim = c(0, boundary),
              xlab = paste("Chromosome", input$chromnum), ylab = "Mean Ratio")
@@ -214,7 +224,7 @@ shinyServer(function(input, output, session) {
       last_gene_line <- c()
       last_gene_name <- c()
 
-      group <- g[g$chrom == input$chromnum, ]
+      group <- genome_bed[genome_bed$chrom == input$chromnum, ]
       pal <- c("#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a",
                "#757780", "#b15928")
       pal <- rep(pal, 1000)
@@ -248,12 +258,13 @@ shinyServer(function(input, output, session) {
 
       pandq <- c()
       if (input$pandq & !(input$continuous)) {
-        pandq <- p$pqbound[as.numeric(p$chrom) == input$chromnum]
+        pandq <- pq$pqbound[as.numeric(pq$chrom) == input$chromnum]
         pandq <- (pandq / chrom_sizes[input$chromnum]) * boundary
       }
       if (input$pandq & input$continuous) {
-        pandq <- p$pqbound[as.numeric(p$chrom) == input$chromnum]
-        pandq <- (xaxis[min(which(x$start[x$chrom == input$chromnum] > pandq))]
+        pandq <- pq$pqbound[as.numeric(pq$chrom) == input$chromnum]
+        pandq <- (xaxis[min(which(genome_depth$start[genome_depth$chrom == 
+                                                    input$chromnum] > pandq))]
                   / chrom_sizes[input$chromnum]) * boundary          
         spacer <- floor(chrom_sizes[input$chromnum] / length(xaxis))
         pandq <- pandq - ((spacer / 2) / chrom_sizes[input$chromnum] * boundary)
@@ -339,31 +350,35 @@ shinyServer(function(input, output, session) {
       query <- "SELECT chrom, pos, ncount, nvaf, tcount, tvaf from "
       query <- paste0(query, "GENOM_SNPDIFF where sample_id = '")
       query <- paste0(query, input$sample,"'")
-      s <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+      genome_snpdiff <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
       #cast
-      s$pos <- as.numeric(s$pos)
-      s$nvaf <- as.numeric(s$nvaf)
-      s$tvaf <- as.numeric(s$tvaf)
-      s$chrom <- as.character(s$chrom)
+      genome_snpdiff$pos <- as.numeric(genome_snpdiff$pos)
+      genome_snpdiff$nvaf <- as.numeric(genome_snpdiff$nvaf)
+      genome_snpdiff$tvaf <- as.numeric(genome_snpdiff$tvaf)
+      genome_snpdiff$chrom <- as.character(genome_snpdiff$chrom)
       #limit to only heterozygous
-      s = s[s$nvaf < 0.6 & s$nvaf > 0.4, ]
+      genome_snpdiff <- genome_snpdiff[genome_snpdiff$nvaf < 0.6 & 
+                                       genome_snpdiff$nvaf > 0.4, ]
 
       #remove the chr prefix
-      s$chrom <- gsub("chr", "", s$chrom)
+      genome_snpdiff$chrom <- gsub("chr", "", genome_snpdiff$chrom)
       #remove the sex chromosomes and where the mean == 0
-      s$chrom[s$chrom %in% "X"] <- "23"
-      s <- s[s$chrom %in% input$chromnum, ]
-      s <- s[order(s$pos), ]
+      genome_snpdiff$chrom[genome_snpdiff$chrom %in% "X"] <- "23"
+      genome_snpdiff <- genome_snpdiff[genome_snpdiff$chrom %in% 
+                                       input$chromnum, ]
+      genome_snpdiff <- genome_snpdiff[order(genome_snpdiff$pos), ]
 
       #hide blacklist genes unless specified otherwise
       if (!input$show_blacklist) {
         for (i in 1:nrow(blacklist)) {
-          s <- s[!(s$pos >= blacklist$V2[i] & s$pos <= blacklist$V3[i] & s$chrom
-                   %in% blacklist$V1[i]), ]
+          genome_snpdiff <- 
+            genome_snpdiff[!(genome_snpdiff$pos >= blacklist$V2[i] & 
+                             genome_snpdiff$pos <= blacklist$V3[i] & 
+                             genome_snpdiff$chrom %in% blacklist$V1[i]), ]
         }
       }
 
-      xaxis <- s$pos
+      xaxis <- genome_snpdiff$pos
       boundary <- 100000
 
       plot(NA, axes = FALSE, ylim = c(0, 1), xlim = c(0, boundary), 
@@ -377,7 +392,7 @@ shinyServer(function(input, output, session) {
       draw_list_max <- c()
       draw_list_color <- c()
       draw_list_names <- c()
-      group <- g[g$chrom == input$chromnum, ]
+      group <- genome_bed[genome_bed$chrom == input$chromnum, ]
 
       pal <- c("#1f78b4", "#33a02c", "#e31a1c", "#ff7f00", "#6a3d9a", "#757780",
                "#b15928")
@@ -388,49 +403,57 @@ shinyServer(function(input, output, session) {
       #add padding
       group$start <- group$start - 100
       group$end <- group$end + 100
-      mypalette <- rep("red", dim(s)[1])
+      mypalette <- rep("red", dim(genome_snpdiff)[1])
       for (i in 1:dim(group)[1]) {
-        if (length(which(s$pos < group$end[i] & s$pos > group$start[i]))) {
-          mypalette[which(s$pos < group$end[i] & s$pos > group$start[i])] <-
+        if (length(which(genome_snpdiff$pos < group$end[i] & 
+                         genome_snpdiff$pos > group$start[i]))) {
+          mypalette[which(genome_snpdiff$pos < group$end[i] &
+                          genome_snpdiff$pos > group$start[i])] <-
             as.character(group$pal[i])
           draw_list_min <- c(draw_list_min, 
-                             min(which(s$pos < group$end[i] & 
-                                         s$pos > group$start[i])))
+                             min(which(genome_snpdiff$pos < group$end[i] & 
+                                       genome_snpdiff$pos > group$start[i])))
           draw_list_max <- c(draw_list_max, 
-                             max(which(s$pos < group$end[i] & 
-                                         s$pos > group$start[i])))
+                             max(which(genome_snpdiff$pos < group$end[i] & 
+                                         genome_snpdiff$pos > group$start[i])))
           draw_list_color <- c(draw_list_color, as.character(group$pal[i]))
           draw_list_names <- c(draw_list_names, group$id[i])
         }
       }
 
-      z <- s
+      z <- genome_snpdiff
       pandq <- c()
       
       if (input$pandq) {
-        pandq <- p$pqbound[as.numeric(input$chromnum)]
+        pandq <- pq$pqbound[as.numeric(input$chromnum)]
         pandq - (pandq / chrom_sizes[input$chromnum]) * boundary
       }
       if (input$continuous) {
-        spacer <- floor(chrom_sizes[input$chromnum] / length(s$pos))
-        s$pos <- 1:length(s$pos) * spacer
-        s$pos <- s$pos - spacer / 2
+        spacer <- floor(chrom_sizes[input$chromnum] / 
+                        length(genome_snpdiff$pos))
+        genome_snpdiff$pos <- 1:length(genome_snpdiff$pos) * spacer
+        genome_snpdiff$pos <- genome_snpdiff$pos - spacer / 2
       }
       if (input$pandq & input$continuous) {
-        spacer <- floor(chrom_sizes[input$chromnum] / length(s$pos))
-        pandq <- p$pqbound[as.numeric(input$chromnum)]
-        pandq <- ((s$pos[min(which(z$pos > pandq))] - spacer / 2) / 
+        spacer <- floor(chrom_sizes[input$chromnum] / 
+                        length(genome_snpdiff$pos))
+        pandq <- pq$pqbound[as.numeric(input$chromnum)]
+        pandq <- ((genome_snpdiff$pos[min(which(z$pos > pandq))] - spacer / 2) / 
                     chrom_sizes[input$chromnum]) * boundary
       }
 
       abline(v = pandq, col = "#FFFFFF", lty = 2)
 
-      segments((s$pos / chrom_sizes[input$chromnum]) * boundary, s$nvaf,
-               (s$pos / chrom_sizes[input$chromnum]) * boundary, s$tvaf)
-      points((s$pos / chrom_sizes[input$chromnum]) * boundary, s$nvaf, pch = 22,
-             cex = 1.35, col = "black", bg = "black")
-      points((s$pos / chrom_sizes[input$chromnum]) * boundary, s$tvaf, pch = 21,
-             cex = 1.35, col = "black", bg = mypalette)
+      segments((genome_snpdiff$pos / chrom_sizes[input$chromnum]) * boundary, 
+               genome_snpdiff$nvaf,
+               (genome_snpdiff$pos / chrom_sizes[input$chromnum]) * boundary, 
+               genome_snpdiff$tvaf)
+      points((genome_snpdiff$pos / chrom_sizes[input$chromnum]) * boundary, 
+             genome_snpdiff$nvaf, pch = 22, cex = 1.35, col = "black", 
+             bg = "black")
+      points((genome_snpdiff$pos / chrom_sizes[input$chromnum]) * boundary, 
+             genome_snpdiff$tvaf, pch = 21, cex = 1.35, col = "black", 
+             bg = mypalette)
     
       if (input$normline) {
         abline(h = c(0, 0.5, 1), col = "gray", lty = 2)
@@ -443,9 +466,9 @@ shinyServer(function(input, output, session) {
     if (input$all_mutation_information) {
       query <- "SELECT * from GENOM_MUTATIONS where sample_id = '"
       query <- paste0(query, input$sample,"'")
-      data <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
-      data$mut_id <- NULL
-      data$sample_id <- NULL
+      genome_muts <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+      genome_muts$mut_id <- NULL
+      genome_muts$sample_id <- NULL
     } else { #otherwise, parse out the data
       #load the data
       #get the samples that are in the database
@@ -454,28 +477,28 @@ shinyServer(function(input, output, session) {
       mut_tools <- dbGetQuery(dbhandle, query, stringsAsFactors=FALSE)
       mut_tools <- mut_tools[,1]
 
-      data <- c()
+      genome_muts <- c()
       for (i in mut_tools) {
         vcf <- read_vcf_for_sample(dbhandle, input$sample, i)
         vcf <- make_table(vcf)
-        data <- rbind(data, vcf)
+        genome_muts <- rbind(genome_muts, vcf)
       }
 
       if (input$hide_blank_mutations) {
-        data <- data[!(data$symbol %in% ""), ]
+        genome_muts <- genome_muts[!(genome_muts$symbol %in% ""), ]
       }
     }
 
     #remove chrom prefix
-    data$chrom = gsub("chr", "", data$chrom)
+    genome_muts$chrom = gsub("chr", "", genome_muts$chrom)
 
     if(!input$type && all_chroms == 0) {
-      data <- data[data$chrom %in% input$chromnum, ]
+      genome_muts <- genome_muts[genome_muts$chrom %in% input$chromnum, ]
     }
     if (!input$show_failed_mutations) {
-      data <- data[data$filter %in% "PASS", ]
+      genome_muts <- genome_muts[genome_muts$filter %in% "PASS", ]
     }
-    data
+    genome_muts
   }
 
   output$plot <- renderPlot(
@@ -511,7 +534,7 @@ shinyServer(function(input, output, session) {
       chr.exclude <- setdiff(chr.exclude, input$chromnum)
     }
 
-    data(UCSC.HG19.Human.CytoBandIdeogram)
+    genome_struct(UCSC.HG19.Human.CytoBandIdeogram)
     UCSC.HG19.Human.CytoBandIdeogram$Chromosome <- 
       gsub("chr", "" , UCSC.HG19.Human.CytoBandIdeogram$Chromosome)
 
@@ -679,38 +702,42 @@ shinyServer(function(input, output, session) {
     query <- "select chrom, start, end, id, normal_mean, tumor_mean, "
     query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
     query <- paste0(query, input$sample,"'")
-    x <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    genome_depth <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
     #cast to proper data types
-    x$start <- as.numeric(x$start)
-    x$end <- as.numeric(x$end)
-    x$normal_mean <- as.numeric(x$normal_mean)
-    x$tumor_mean <- as.numeric(x$tumor_mean)
+    genome_depth$start <- as.numeric(genome_depth$start)
+    genome_depth$end <- as.numeric(genome_depth$end)
+    genome_depth$normal_mean <- as.numeric(genome_depth$normal_mean)
+    genome_depth$tumor_mean <- as.numeric(genome_depth$tumor_mean)
     #remove chr prefix if it exists
-    x$chrom <- gsub("chr","",x$chrom)
+    genome_depth$chrom <- gsub("chr","",genome_depth$chrom)
 
     #remove the sex chromosomes and where the mean == 0
-    x <- x[x$tumor_mean != 0, ]
-    x <- x[x$chrom != "Y", ]
-    x$chrom[x$chrom %in% "X"] <- "23"
+    genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
+    genome_depth <- genome_depth[genome_depth$chrom != "Y", ]
+    genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
 
     #hide blacklist genes unless specified otherwise
     if (!input$show_blacklist) {
       for (i in 1:nrow(blacklist)) {
-        x <- x[!(x$start >= blacklist$V2[i] & x$end <= blacklist$V3[i] & 
-                   x$chrom %in% blacklist$V1[i]), ]
+        genome_depth <- 
+          genome_depth[!(genome_depth$start >= blacklist$V2[i] &
+                         genome_depth$end <= blacklist$V3[i] & 
+                         genome_depth$chrom %in% blacklist$V1[i]), ]
       }
     }
 
     #load normalization, if there's no normalization flag, 
     #generate a base normalization
-    if (!input$chromnorm && length(x$tumor_depth[!is.na(x$tumor_depth)]) > 0) {
-      x <- x[!is.na(x$tumor_depth), ]
-      norm_depth <- x$tumor_depth
+    if (!input$chromnorm && 
+        length(genome_depth$tumor_depth[!is.na(genome_depth$tumor_depth)]) > 0) {
+      genome_depth <- genome_depth[!is.na(genome_depth$tumor_depth), ]
+      norm_depth <- genome_depth$tumor_depth
     } else {    
       chromlist <- get_chrom_normalization_input()
-      n_fac <- mean(x$normal_mean[x$chrom %in% chromlist])
-      t_fac <- mean(x$tumor_mean[x$chrom %in% chromlist])
-      norm_depth <- (x$tumor_mean / t_fac) / (x$normal_mean / n_fac)
+      n_fac <- mean(genome_depth$normal_mean[genome_depth$chrom %in% chromlist])
+      t_fac <- mean(genome_depth$tumor_mean[genome_depth$chrom %in% chromlist])
+      norm_depth <- (genome_depth$tumor_mean / t_fac) / 
+        (genome_depth$normal_mean / n_fac)
     }
     
     #regions above this are considered a gain
@@ -718,23 +745,23 @@ shinyServer(function(input, output, session) {
     #regions below this are considered a loss
     lower_bound <- 0.75
 
-    x$norm_depth <- norm_depth
+    genome_depth$norm_depth <- norm_depth
 
-    x$cn_status <- "normal"
-    x$cn_status[norm_depth >= upper_bound] <- "gain"
-    x$cn_status[norm_depth <= lower_bound] <- "loss"
+    genome_depth$cn_status <- "normal"
+    genome_depth$cn_status[norm_depth >= upper_bound] <- "gain"
+    genome_depth$cn_status[norm_depth <= lower_bound] <- "loss"
 
-    x$normal_mean <- NULL
-    x$tumor_mean <- NULL
-    x$tumor_depth <- NULL
+    genome_depth$normal_mean <- NULL
+    genome_depth$tumor_mean <- NULL
+    genome_depth$tumor_depth <- NULL
 
     #only show the chromosome we're looking at if 
     #a specific chromosome is indicated
     if (!input$type) {
-      x <- x[x$chrom %in% input$chromnum, ]
+      genome_depth <- genome_depth[genome_depth$chrom %in% input$chromnum, ]
     }
 
-    x
+    genome_depth
   }))
 
   output$AutoCNGroups <- 
@@ -745,33 +772,36 @@ shinyServer(function(input, output, session) {
     query <- "select chrom, start, end, id, normal_mean, tumor_mean, "
     query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
     query <- paste0(query, input$sample,"'")
-    x <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    genome_depth <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
 
     #cast to proper data types
-    x$start <- as.numeric(x$start)
-    x$end <- as.numeric(x$end)
-    x$normal_mean <- as.numeric(x$normal_mean)
-    x$tumor_mean <- as.numeric(x$tumor_mean)
+    genome_depth$start <- as.numeric(genome_depth$start)
+    genome_depth$end <- as.numeric(genome_depth$end)
+    genome_depth$normal_mean <- as.numeric(genome_depth$normal_mean)
+    genome_depth$tumor_mean <- as.numeric(genome_depth$tumor_mean)
 
     #remove the sex chromosomes and where the mean == 0
-    x <- x[x$tumor_mean != 0, ]
-    x <- x[x$chrom != "Y", ]
-    x$chrom[x$chrom %in% "X"] = "23"
+    genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
+    genome_depth <- genome_depth[genome_depth$chrom != "Y", ]
+    genome_depth$chrom[genome_depth$chrom %in% "X"] = "23"
 
     #hide blacklist genes unless specified otherwise
     if (!input$show_blacklist) {
       for (i in 1:nrow(blacklist)) {
-        x <- x[!(x$start >= blacklist$V2[i] & x$end <= blacklist$V3[i] & 
-                   x$chrom %in% blacklist$V1[i]), ]
+        genome_depth <- 
+          genome_depth[!(genome_depth$start >= blacklist$V2[i] & 
+                         genome_depth$end <= blacklist$V3[i] & 
+                         genome_depth$chrom %in% blacklist$V1[i]), ]
       }
     }
 
     #load the curator normalization
     curator_norm <- 1:22
-    n_fac <- mean(x$normal_mean[x$chrom %in% curator_norm]) 
-    t_fac <- mean(x$tumor_mean[x$chrom %in% curator_norm])
+    n_fac <- mean(genome_depth$normal_mean[genome_depth$chrom %in% curator_norm]) 
+    t_fac <- mean(genome_depth$tumor_mean[genome_depth$chrom %in% curator_norm])
 
-    norm_depth <- (x$tumor_mean / t_fac) / (x$normal_mean / n_fac)
+    norm_depth <- 
+      (genome_depth$tumor_mean / t_fac) / (genome_depth$normal_mean / n_fac)
 
     # load snp data
     query <- "SELECT chrom, pos, ncount, nvaf, tcount, tvaf from GENOM_SNPDIFF "
@@ -788,19 +818,23 @@ shinyServer(function(input, output, session) {
     #regions below this are considered a loss
     lower_bound <- 0.75
 
-    x$norm_depth <- norm_depth
+    genome_depth$norm_depth <- norm_depth
 
-    x$cn_status <- "normal"
-    x$cn_status[norm_depth >= upper_bound] <- "gain"
-    x$cn_status[norm_depth <= lower_bound] <- "loss"
+    genome_depth$cn_status <- "normal"
+    genome_depth$cn_status[norm_depth >= upper_bound] <- "gain"
+    genome_depth$cn_status[norm_depth <= lower_bound] <- "loss"
 
     #define groups
     results <- c()
-    for (i in 1:dim(g)[1]) {
-      cn_status <- x$cn_status[(x$start >= g$start[i] & x$end <= g$end[i] &
-                                  x$chrom %in% g$chrom[i])]
-      snp_status <- snp$snp_diff[(snp$pos >= g$start[i] & snp$pos <= g$end[i] &
-                                    snp$chrom %in% g$chrom[i])]
+    for (i in 1:dim(genome_bed)[1]) {
+      cn_status <- 
+        genome_depth$cn_status[(genome_depth$start >= genome_bed$start[i] & 
+                                genome_depth$end <= genome_bed$end[i] &
+                                genome_depth$chrom %in% genome_bed$chrom[i])]
+      snp_status <- 
+        snp$snp_diff[(snp$pos >= genome_bed$start[i] & 
+                      snp$pos <= genome_bed$end[i] &
+                      snp$chrom %in% genome_bed$chrom[i])]
       drift <- 0
       if (length(snp_status) > 0) {
         drift <- median(snp_status)
@@ -823,7 +857,7 @@ shinyServer(function(input, output, session) {
         cn_status = "GAIN_LOH"
       }
       cn_status <- paste(unique(cn_status),collapse=",")
-      results <- rbind(results, c(g$id[i], cn_status))
+      results <- rbind(results, c(genome_bed$id[i], cn_status))
     }
 
     results
@@ -844,20 +878,21 @@ shinyServer(function(input, output, session) {
                                                      searching = FALSE), {
     query <- paste0("SELECT * from GENOM_STRUCTVAR where sample_id = '",
                     input$sample,"'")
-    data <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
-    data$sv_id <- NULL
-    data$sample_id <- NULL
+    genome_struct <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    genome_struct$sv_id <- NULL
+    genome_struct$sample_id <- NULL
 
     if (!input$show_failed_structvars) {
-      data = data[data$filter %in% "PASS", ]
+      genome_struct = genome_struct[genome_struct$filter %in% "PASS", ]
     }
 
-    data$chrom[data$chrom %in% "X"] <- "23"
-    #only show the chromosome we're looking at if a specific chromosome is indicated
+    genome_struct$chrom[genome_struct$chrom %in% "X"] <- "23"
+    #only show the chromosome we're looking at 
+    #if a specific chromosome is indicated
     if (!input$type) {
-      data <- data[data$chrom %in% input$chromnum, ]
+      genome_struct <- genome_struct[genome_struct$chrom %in% input$chromnum, ]
     }
-    data
+    genome_struct
   }))
 
   # Generate debug information
@@ -873,19 +908,19 @@ shinyServer(function(input, output, session) {
     #load the data
     query <- paste0("SELECT * from genom_depth where sample_id = '",
                     input$sample,"'")
-    data <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+    genome_struct <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
 
     #hide blacklist by default
     if (!input$show_blacklist) {
       for (i in 1:nrow(blacklist)) {
-        data <- data[!(data$start >= blacklist$V2[i] & 
-                data$end <= blacklist$V3[i] &
-                data$chrom %in% blacklist$V1[i]), ]
+        genome_struct <- genome_struct[!(genome_struct$start >= blacklist$V2[i] & 
+                genome_struct$end <= blacklist$V3[i] &
+                genome_struct$chrom %in% blacklist$V1[i]), ]
       }
     }
 
-    res <- data.frame(mean_normal_depth = mean(data$normal_mean), 
-                      mean_tumor_depth = mean(data$tumor_mean))
+    res <- data.frame(mean_normal_depth = mean(genome_struct$normal_mean), 
+                      mean_tumor_depth = mean(genome_struct$tumor_mean))
     res
   }))
 
