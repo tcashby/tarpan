@@ -56,17 +56,17 @@ Python can be installed standalone or through Anaconda.
 
 #### Script Arguments
 
-| Argument | Description |  | Argument | Description |
-| -------- | ----------- |  | -------- | ----------- |
-| `-refgen`	| Reference Genome	|  | `-muttool`	| Mutation File Tool	|
-| `-pipeline`	| Pipeline Name	|  | `-svfile`	| Structural Variant File	|
-| `-targetbed`	| Target Bed File	|  | `-svtool`	| Structural Variant File Tool	|
-| `-groupbed`	| Group Bed File	|  | `-snp`	| SNP File	|
-| `-blacklist`	| Blacklist Bed File	|  | `-met`	| Metrics File	|
-| `-bedfile`	| Other Bed File	|  | `-depth`	| Depth File	|
-| `-bedtype`	| Other Bed File Type	|  | `-log`	| Log File	|
-| `-sampid`	| Sample ID	|  | `-sex`	| Patient Sex	|
-| `-normid`	| Normal ID	|  | `-patid`	| Patient Identifier	|
+| Argument | Description || Argument | Description |
+| -------- | ----------- || -------- | ----------- |
+| `-refgen`	| Reference Genome	|| `-muttool`	| Mutation File Tool	|
+| `-pipeline`	| Pipeline Name	|| `-svfile`	| Structural Variant File	|
+| `-targetbed`	| Target Bed File	|| `-svtool`	| Structural Variant File Tool	|
+| `-groupbed`	| Group Bed File	|| `-snp`	| SNP File	|
+| `-blacklist`	| Blacklist Bed File	|| `-met`	| Metrics File	|
+| `-bedfile`	| Other Bed File	|| `-depth`	| Depth File	|
+| `-bedtype`	| Other Bed File Type	|| `-log`	| Log File	|
+| `-sampid`	| Sample ID	|| `-sex`	| Patient Sex	|
+| `-normid`	| Normal ID	|| `-patid`	| Patient Identifier	|
 | `-mutfile`	| Mutation File	|
 
 
@@ -76,7 +76,7 @@ Python can be installed standalone or through Anaconda.
 ```sh
 required_args = ['db','refgen','targetbed','groupbed']
 ```
-```cs
+```sh
 create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
              -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>"
              -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
@@ -86,7 +86,7 @@ create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
 ```sh
 required_args = ['db']
 ```
-```cs
+```sh
 update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
              -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>"
              -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
@@ -96,7 +96,7 @@ update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
 ```sh
 required_args = ['db','sampid']
 ```
-```cs
+```sh
 create_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>"
                    -mutfile "<MUTATION file>" -muttool "<MUTATION tool>"
                    -mutfile "<MUTATION2 file>" -muttool "<MUTATION2 tool>"
@@ -109,7 +109,7 @@ create_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID
 ```sh
 required_args = ['db','sampid']
 ```
-```cs
+```sh
 update_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>"
                    -mutfile "<MUTATION file>" -muttool "<MUTATION tool>"
                    -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>"
@@ -121,6 +121,6 @@ update_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID
 ```sh
 required_args = ['db','sampid']
 ```
-```cs
+```sh
 delete_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" 
 ```
