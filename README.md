@@ -37,63 +37,90 @@ source("install.R")
 Due to limitations of SQLite, databases can not be created on NSF/SMB mounted volumes.
 
 ## Scripts
+In order to utilize the Python scripts, Python must be installed.
 
-| Argument | Description |
-| -------- | ----------- |
-| `-refgen`	| Reference Genome	|
-| `-pipeline`	| Pipeline Name	|
-| `-targetbed`	| Target Bed File	|
-| `-groupbed`	| Group Bed File	|
-| `-blacklist`	| Blacklist Bed File	|
-| `-bedfile`	| Other Bed File	|
-| `-bedtype`	| Other Bed File Type	|
-| `-sampid`	| Sample ID	|
-| `-normid`	| Normal ID	|
+Python can be installed standalone or through Anaconda.
+
+#### Python Setup
+
+1. Download Python 3.7.x from:https://www.python.org/downloads/
+
+
+#### Anaconda setup
+
+1. Install Anaconda (for Python 3.7) from: https://www.anaconda.com/distribution/
+2. Install Pandas via Anaconda Navigator or using the Anaconda Prompt using PIP.  
+```sh
+  python -m pip install Pandas
+```
+
+#### Script Arguments
+
+| Argument | Description |  | Argument | Description |
+| -------- | ----------- |  | -------- | ----------- |
+| `-refgen`	| Reference Genome	|  | `-muttool`	| Mutation File Tool	|
+| `-pipeline`	| Pipeline Name	|  | `-svfile`	| Structural Variant File	|
+| `-targetbed`	| Target Bed File	|  | `-svtool`	| Structural Variant File Tool	|
+| `-groupbed`	| Group Bed File	|  | `-snp`	| SNP File	|
+| `-blacklist`	| Blacklist Bed File	|  | `-met`	| Metrics File	|
+| `-bedfile`	| Other Bed File	|  | `-depth`	| Depth File	|
+| `-bedtype`	| Other Bed File Type	|  | `-log`	| Log File	|
+| `-sampid`	| Sample ID	|  | `-sex`	| Patient Sex	|
+| `-normid`	| Normal ID	|  | `-patid`	| Patient Identifier	|
 | `-mutfile`	| Mutation File	|
-| `-muttool`	| Mutation File Tool	|
-| `-svfile`	| Structural Variant File	|
-| `-svtool`	| Structural Variant File Tool	|
-| `-snp`	| SNP File	|
-| `-met`	| Metrics File	|
-| `-depth`	| Depth File	|
-| `-log`	| Log File	|
-| `-sex`	| Patient Sex	|
-| `-patid`	| Patient Identifier	|
+
+
+
 
 **DB Create**
-```
-create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
-
+```sh
 required_args = ['db','refgen','targetbed','groupbed']
+```
+```cs
+create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
+             -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>"
+             -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
 ```
 
 **DB Update**
-```
-update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>" -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>" -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
-
+```sh
 required_args = ['db']
-possible_args = ['refgen','pipeline','targetbed','groupbed','blacklist','bedfile']
+```
+```cs
+update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
+             -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>"
+             -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
 ```
 
 **Entry Create**
-```
-create_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>" -mutfile "<MUTATION file>" -muttool "<MUTATION tool>" -mutfile "<MUTATION2 file>" -muttool "<MUTATION2 tool>" -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>" -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>" -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>" 
-
+```sh
 required_args = ['db','sampid']
-possible_args = ['mutfile','svfile','snp','met','depth'] 
+```
+```cs
+create_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>"
+                   -mutfile "<MUTATION file>" -muttool "<MUTATION tool>"
+                   -mutfile "<MUTATION2 file>" -muttool "<MUTATION2 tool>"
+                   -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>"
+                   -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>"
+                   -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>"
 ```
 
 **Entry Update**
+```sh
+required_args = ['db','sampid']
 ```
-update_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>" -mutfile "<MUTATION file>" -muttool "<MUTATION tool>" -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>" -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>" -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>" 
-
-required_args = ['db','sampid'] 
-possible_args = ['normid','mutfile','svfile','snp','met','depth','log','patid','sex']
+```cs
+update_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>"
+                   -mutfile "<MUTATION file>" -muttool "<MUTATION tool>"
+                   -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>"
+                   -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>"
+                   -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>"
 ```
 
 **Entry Delete**
-```
-delete_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" 
-
+```sh
 required_args = ['db','sampid']
+```
+```cs
+delete_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" 
 ```
