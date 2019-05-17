@@ -534,7 +534,7 @@ shinyServer(function(input, output, session) {
       chr.exclude <- setdiff(chr.exclude, input$chromnum)
     }
 
-    genome_struct(UCSC.HG19.Human.CytoBandIdeogram)
+    data(UCSC.HG19.Human.CytoBandIdeogram)
     UCSC.HG19.Human.CytoBandIdeogram$Chromosome <- 
       gsub("chr", "" , UCSC.HG19.Human.CytoBandIdeogram$Chromosome)
 
