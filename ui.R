@@ -1,6 +1,7 @@
 #dependencies
 library(shiny)
 library(shinyBS)
+library(shinythemes)
 library(DT)
 #sqlite libraries
 library(DBI)
@@ -19,6 +20,7 @@ options(shiny.sanitize.errors = TRUE)
 
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
+  theme = shinytheme("united"),
   # Application title
   titlePanel("TarPan Viewer"),
   img(src = "logo.jpg", align = "right"),

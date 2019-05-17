@@ -27,3 +27,4 @@ __pycache__/
 # Spyder project settings
 .spyderproject
 .spyproject
+.Rproj.user

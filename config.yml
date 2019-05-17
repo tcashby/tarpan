@@ -3,3 +3,6 @@ default:
   SQLiteDB: 
     - "latest.db"  # path to SQLiteDB file
     - "lung.db"
+    - "breast_cancer.db"
+    - "lung_new.db"
+    - "texas.db"
