@@ -44,18 +44,12 @@ Python can be installed standalone or through Anaconda.
 #### Python Setup
 
 1. Download Python 3.7.x from: https://www.python.org/downloads/
-2. Install Pandas via Command Prompt.  
+2. Install Python (If Windows, select "Add PATH" on install)
+3. Install Pandas via Command Prompt or Shell prompt.  
   ```sh
     python -m pip install Pandas
   ```
-
-#### Anaconda setup
-
-1. Install Anaconda (for Python 3.7) from: https://www.anaconda.com/distribution/
-2. Install Pandas via Anaconda Navigator or using the Anaconda Prompt using PIP.  
-  ```sh
-    python -m pip install Pandas
-  ```
+If issues occur, this [Python tutorial](https://docs.python.org/3/tutorial/interpreter.html) might help.
 
 #### Script Arguments
 
