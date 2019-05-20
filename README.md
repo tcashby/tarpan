@@ -83,53 +83,53 @@ Python can be installed standalone or through Anaconda.
 
 **DB Create**
 ```sh
-required_args = ['db','refgen','targetbed','groupbed']
+required_args = -db, -refgen, -targetbed, -groupbed
 ```
 ```cs
-create_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
-             -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>"
-             -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
+create_db.py -db "Tarpan.db" -refgen "hg19" -pipeline "pipeline01"
+             -targetbed "target.bed" -groupbed "group.bed" -blacklist "blacklist.bed"
+             -bedfile "other.bed" -bedtype "other"
 ```
 
 **DB Update**
 ```sh
-required_args = ['db']
+required_args = -db
 ```
 ```cs
-update_db.py -db "<WHATEVER.db>" -refgen "<REF_GENOME>" -pipeline "<PIPELINE>"
-             -targetbed "<TARGET_BED>" -groupbed "<GROUP_BED>" -blacklist "<BLACKLIST_BED>"
-             -bedfile "<BED_FILE>" -bedtype "<BED_TYPE>"
+update_db.py -db "Tarpan.db" -refgen "hg19" -pipeline "pipeline01"
+             -targetbed "target.bed" -groupbed "group.bed" -blacklist "blacklist.bed"
+             -bedfile "other.bed" -bedtype "other"
 ```
 
 **Entry Create**
 ```sh
-required_args = ['db','sampid']
+required_args = -db, -sampid
 ```
 ```cs
-create_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>"
-                   -mutfile "<MUTATION file>" -muttool "<MUTATION tool>"
-                   -mutfile "<MUTATION2 file>" -muttool "<MUTATION2 tool>"
-                   -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>"
-                   -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>"
-                   -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>"
+create_db_entry.py -db "Tarpan.db" -sampid "sample01" -normid "sample01Norm"
+                   -mutfile "sample01Mut.vcf" -muttool "Strelka2"
+                   -mutfile "sample01Mut02.vcf" -muttool "MuTect"
+                   -svfile "sample01SV.vcf" -svtool "Manta"
+                   -snp "sample01SNP.csv" -met "sample01MET.csv" -depth "sample01DEP.csv"
+                   -log "sample01.log" -patid "patientId" -sex "Male"
 ```
 
 **Entry Update**
 ```sh
-required_args = ['db','sampid']
+required_args = -db, -sampid
 ```
 ```cs
-update_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>" -normid "<SAMPLE_ID_NORMAL>"
-                   -mutfile "<MUTATION file>" -muttool "<MUTATION tool>"
-                   -svfile "<STRUCTVAR file>" -svtool "<STRUCTVAR tool>"
-                   -snp "<SNPDIFF file>" -met "<METRICS file>" -depth "<DEPTH file>"
-                   -log "<LOG file>" -patid "<PAT ID>" -sex "<SEX>"
+update_db_entry.py -db "Tarpan.db" -sampid "sample01" -normid "sample01Norm"
+                   -mutfile "sample01Mut.vcf" -muttool "Strelka2"
+                   -svfile "sample01SV.vcf" -svtool "Manta"
+                   -snp "sample01SNP.csv" -met "sample01MET.csv" -depth "sample01DEP.csv"
+                   -log "sample01.log" -patid "patientId" -sex "Male"
 ```
 
 **Entry Delete**
 ```sh
-required_args = ['db','sampid']
+required_args = -db, -sampid
 ```
 ```cs
-delete_db_entry.py -db "<WHATEVER.db>" -sampid "<SAMPLE_ID>"
+delete_db_entry.py -db "Tarpan.db" -sampid "sample01"
 ```
