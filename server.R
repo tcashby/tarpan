@@ -64,6 +64,18 @@ shinyServer(function(input, output, session) {
     genome_bed <<- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
     #remove chrom prefix
     genome_bed$chrom <<- gsub("chr", "", genome_bed$chrom)
+
+    #reload db
+    query <- "SELECT chrom, start, end, id from GENOM_BEDFILES "
+    query <- paste0(query, "where type = 'blacklist'")
+    blacklist <<- dbGetQuery(dbhandle, query, stringsAsFactors = F)
+    if (nrow(blacklist) == 0) {
+      blacklist <<- data.frame(V1 = "N", V2 = -1, V3 = -1, stringsAsFactors = FALSE)
+    }
+    else {
+      colnames(blacklist) <<- c("V1","V2","V3","V4")
+    }
+    blacklist$V1[blacklist$V1 %in% "X"] <- "23"
   })
 
   #returns all input chromosomes for normalization
