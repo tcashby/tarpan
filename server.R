@@ -499,6 +499,8 @@ shinyServer(function(input, output, session) {
       if (input$hide_blank_mutations) {
         genome_muts <- genome_muts[!(genome_muts$symbol %in% ""), ]
       }
+
+
     }
 
     #remove chrom prefix
@@ -510,6 +512,15 @@ shinyServer(function(input, output, session) {
     if (!input$show_failed_mutations) {
       genome_muts <- genome_muts[genome_muts$filter %in% "PASS", ]
     }
+    #this hides genes on the blacklist
+    if (!input$show_blacklist) {
+      for (i in 1:nrow(blacklist)) {
+        genome_muts <- genome_muts[!(genome_muts$pos >= blacklist$V2[i] & 
+          genome_muts$pos <= blacklist$V3[i] &
+          genome_muts$chrom %in% blacklist$V1[i]),]
+      }
+    }
+
     genome_muts
   }
 
@@ -587,6 +598,10 @@ shinyServer(function(input, output, session) {
                                      stringsAsFactors=FALSE)
 
       circos_link_data <- rbind(circos_link_data, circos_nonbnd)
+
+      #don't keep the non-standard chroms
+      circos_link_data <- circos_link_data[circos_link_data$breakpoint1_chrom %in% c(as.character(1:22), "X", "Y"),]
+      circos_link_data <- circos_link_data[circos_link_data$breakpoint2_chrom %in% c(as.character(1:22), "X", "Y"),]
 
       if (!input$type) {
         if (input$show_inter_svs) {
@@ -898,12 +913,16 @@ shinyServer(function(input, output, session) {
       genome_struct = genome_struct[genome_struct$filter %in% "PASS", ]
     }
 
+    #if the chr prefix is on chrom, remove it
+    genome_struct$chrom <- gsub("chr", "", genome_struct$chrom)
+
     genome_struct$chrom[genome_struct$chrom %in% "X"] <- "23"
     #only show the chromosome we're looking at 
     #if a specific chromosome is indicated
     if (!input$type) {
       genome_struct <- genome_struct[genome_struct$chrom %in% input$chromnum, ]
     }
+
     genome_struct
   }))
 

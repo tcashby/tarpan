@@ -84,7 +84,7 @@ shinyUI(fluidPage(
       checkboxInput("show_blacklist", "Show blacklist genes", 
                     value = FALSE, width=NULL),
       conditionalPanel(
-        "$('li.active a').first().html() == 'Mutations'",
+        "$('li.active a').first().html() == 'Mutations' | $('li.active a').first().html() == 'RCircos'",
         h4("Mutation Options"),
         checkboxInput("all_mutation_information", 
                       "Show all mutation information", 
@@ -94,24 +94,29 @@ shinyUI(fluidPage(
                       value = FALSE, width = NULL),
         checkboxInput("hide_blank_mutations", 
                       "Hide blank mutations", 
-                      value = FALSE, width = NULL)
-      ),
-      conditionalPanel(
-        "$('li.active a').first().html() == 'Structural Variants'",
-        h4("Structural Variant Options"),
-        checkboxInput("show_failed_structvars", "Show SVs that failed filter", 
-                      value = FALSE, width = NULL)
-      ),
-      conditionalPanel(
-        "$('li.active a').first().html() == 'RCircos'",
-        h4("Structural Variant Options"),
-        checkboxInput("show_inter_svs", "Show Inter-chromosomal SVs", 
                       value = FALSE, width = NULL),
-        h4("Mutation Options"),
-        checkboxInput("hide_circos_muts", "Hide Mutations", 
-                      value = FALSE, width = NULL)
-
+        conditionalPanel(
+          "$('li.active a').first().html() == 'RCircos'",
+          checkboxInput("hide_circos_muts", "Hide Mutations", 
+                       value = FALSE, width = NULL)
+        )
       ),
+      conditionalPanel(
+        "$('li.active a').first().html() == 'Structural Variants' | $('li.active a').first().html() == 'RCircos'",
+        h4("Structural Variant Options"),
+        checkboxInput("show_failed_structvars", "Show SVs that failed filter", value = FALSE, width = NULL),
+        conditionalPanel(
+          "$('li.active a').first().html() == 'RCircos'",
+          checkboxInput("show_inter_svs", "Show Inter-chromosomal SVs",value = FALSE, width = NULL)
+        )
+      ),
+      # conditionalPanel(
+      #   ,
+      #   ,
+      #   h4("Mutation Options"),
+      #   
+
+      # ),
       conditionalPanel(
         "$('li.active a').first().html() == 'Copy Number Plot'",
         h4("Plotting Options"),
