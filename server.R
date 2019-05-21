@@ -473,68 +473,7 @@ shinyServer(function(input, output, session) {
     }
   }
 
-  get_mutations <- function(all_chroms = 0) {
-    #load the raw vcf
-    if (input$all_mutation_information) {
-      query <- "SELECT * from GENOM_MUTATIONS where sample_id = '"
-      query <- paste0(query, input$sample,"'")
-      genome_muts <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
-      genome_muts$mut_id <- NULL
-      genome_muts$sample_id <- NULL
-    } else { #otherwise, parse out the data
-      #load the data
-      #get the samples that are in the database
-      query <- "SELECT distinct mut_tool from GENOM_MUTATIONS "
-      query <- paste0(query, "where sample_id = '",input$sample,"'")
-      mut_tools <- dbGetQuery(dbhandle, query, stringsAsFactors=FALSE)
-      mut_tools <- mut_tools[,1]
-
-      genome_muts <- c()
-      for (i in mut_tools) {
-        vcf <- read_vcf_for_sample(dbhandle, input$sample, i)
-        vcf <- make_table(vcf)
-        genome_muts <- rbind(genome_muts, vcf)
-      }
-
-      if (input$hide_blank_mutations) {
-        genome_muts <- genome_muts[!(genome_muts$symbol %in% ""), ]
-      }
-
-
-    }
-
-    #remove chrom prefix
-    genome_muts$chrom = gsub("chr", "", genome_muts$chrom)
-
-    if(!input$type && all_chroms == 0) {
-      genome_muts <- genome_muts[genome_muts$chrom %in% input$chromnum, ]
-    }
-    if (!input$show_failed_mutations) {
-      genome_muts <- genome_muts[genome_muts$filter %in% "PASS", ]
-    }
-    #this hides genes on the blacklist
-    if (!input$show_blacklist) {
-      for (i in 1:nrow(blacklist)) {
-        genome_muts <- genome_muts[!(genome_muts$pos >= blacklist$V2[i] & 
-          genome_muts$pos <= blacklist$V3[i] &
-          genome_muts$chrom %in% blacklist$V1[i]),]
-      }
-    }
-
-    genome_muts
-  }
-
-  output$plot <- renderPlot(
-  {
-    draw_copy_number_plot()
-  })
-
-  output$plot2 <- renderPlot(
-  {
-    draw_snp_plot()
-  })
-
-  output$rcircos <- renderPlot(width=750, height=750, {
+  get_rcircos_plot <- function() {
     #do struct vars exist for this sample?
     query <- "select * from GENOM_STRUCTVAR where sample_id = '"
     query <- paste0(query, input$sample,"'")
@@ -700,13 +639,11 @@ shinyServer(function(input, output, session) {
 
     RCircos.Chromosome.Ideogram.Plot()
 
-
     rcircos.params <- RCircos.Get.Plot.Parameters()
     rcircos.params$point.type <- 16
     rcircos.params$point.size <- 1
     rcircos.params$text.size <- 1
     RCircos.Reset.Plot.Parameters(rcircos.params)
-
 
     if (nrow(circos_link_data) > 0) {
       RCircos.Link.Plot(circos_link_data, track.num = 1, by.chromosome = TRUE,
@@ -722,7 +659,71 @@ shinyServer(function(input, output, session) {
       RCircos.Gene.Connector.Plot(circos_mut_data, 3)
       RCircos.Gene.Name.Plot(circos_mut_data, 4, 4)
     }
+  }
 
+  get_mutations <- function(all_chroms = 0) {
+    #load the raw vcf
+    if (input$all_mutation_information) {
+      query <- "SELECT * from GENOM_MUTATIONS where sample_id = '"
+      query <- paste0(query, input$sample,"'")
+      genome_muts <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+      genome_muts$mut_id <- NULL
+      genome_muts$sample_id <- NULL
+    } else { #otherwise, parse out the data
+      #load the data
+      #get the samples that are in the database
+      query <- "SELECT distinct mut_tool from GENOM_MUTATIONS "
+      query <- paste0(query, "where sample_id = '",input$sample,"'")
+      mut_tools <- dbGetQuery(dbhandle, query, stringsAsFactors=FALSE)
+      mut_tools <- mut_tools[,1]
+
+      genome_muts <- c()
+      for (i in mut_tools) {
+        vcf <- read_vcf_for_sample(dbhandle, input$sample, i)
+        vcf <- make_table(vcf)
+        genome_muts <- rbind(genome_muts, vcf)
+      }
+
+      if (input$hide_blank_mutations) {
+        genome_muts <- genome_muts[!(genome_muts$symbol %in% ""), ]
+      }
+
+
+    }
+
+    #remove chrom prefix
+    genome_muts$chrom = gsub("chr", "", genome_muts$chrom)
+
+    if(!input$type && all_chroms == 0) {
+      genome_muts <- genome_muts[genome_muts$chrom %in% input$chromnum, ]
+    }
+    if (!input$show_failed_mutations) {
+      genome_muts <- genome_muts[genome_muts$filter %in% "PASS", ]
+    }
+    #this hides genes on the blacklist
+    if (!input$show_blacklist) {
+      for (i in 1:nrow(blacklist)) {
+        genome_muts <- genome_muts[!(genome_muts$pos >= blacklist$V2[i] & 
+          genome_muts$pos <= blacklist$V3[i] &
+          genome_muts$chrom %in% blacklist$V1[i]),]
+      }
+    }
+
+    genome_muts
+  }
+
+  output$plot <- renderPlot(
+  {
+    draw_copy_number_plot()
+  })
+
+  output$plot2 <- renderPlot(
+  {
+    draw_snp_plot()
+  })
+
+  output$rcircos <- renderPlot(width=750, height=750, {
+    get_rcircos_plot()
   })
 
   output$AutoCN <- 
@@ -958,6 +959,21 @@ shinyServer(function(input, output, session) {
                       mean_tumor_depth = mean(genome_struct$tumor_mean))
     res
   }))
+
+  output$downloadRCircosPlot <- downloadHandler(
+    filename = function() { 
+      if(input$type == 1)
+        paste(input$sample, "_rcircos.pdf", sep = "")
+      else
+        paste(input$sample, "_chrom_", input$chromnum, 
+              "_rcircos.pdf", sep = "")
+    },
+    content = function(file) {
+      pdf(h = 10, w = 10, file = file)
+      get_rcircos_plot()
+      dev.off()
+    }
+  )
 
   output$downloadCopyNumberPlot <- downloadHandler(
     filename = function() { 

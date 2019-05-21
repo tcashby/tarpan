@@ -151,7 +151,11 @@
             br(),
             downloadButton('downloadSNPPlot', 'Download SNP Plot')
           )
-       )
+        ),
+        conditionalPanel(
+          "$('li.active a').first().html() == 'RCircos'",
+          downloadButton('downloadRCircosPlot', 'Download RCircos')
+        )
       ),
       
       # Show a plot of the generated distribution
