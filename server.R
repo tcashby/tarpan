@@ -622,7 +622,6 @@ shinyServer(function(input, output, session) {
         }
       }
     }
-
     if (nrow(mutations) > 0) {
       circos_mut_data <- data.frame(breakpoint1_chrom = mutations$chrom, 
                                     breakpoint1_start = mutations$pos, 
@@ -635,7 +634,6 @@ shinyServer(function(input, output, session) {
                                              %in% chr.exclude), ]
       }
     }
-
     if (nrow(copynumber) > 0) {
       #cast to proper data types
       copynumber$start <- as.numeric(copynumber$start)
@@ -660,8 +658,10 @@ shinyServer(function(input, output, session) {
       }
     
       #set up x-axis
+      copynumber$chrom[copynumber$chrom %in% "X"] <- "23"
       xaxis <- copynumber$start + 
         cumulative_chrom_sizes[as.numeric(copynumber$chrom)]
+      copynumber$chrom[copynumber$chrom %in% "23"] <- "X"
 
       #if tumor depth is set in the database, use those values initially
       if (!input$chromnorm && 
@@ -692,33 +692,37 @@ shinyServer(function(input, output, session) {
           circos_cn_data[!(circos_cn_data$breakpoint1_chrom %in% chr.exclude), ]
       }
     }
-
     tracks.inside <- 5
     tracks.outside <- 0
     RCircos.Set.Core.Components(cyto.info = UCSC.HG19.Human.CytoBandIdeogram, 
                                 chr.exclude, tracks.inside, tracks.outside)
     RCircos.Set.Plot.Area()
+
     RCircos.Chromosome.Ideogram.Plot()
+
 
     rcircos.params <- RCircos.Get.Plot.Parameters()
     rcircos.params$point.type <- 16
     rcircos.params$point.size <- 1
     rcircos.params$text.size <- 1
     RCircos.Reset.Plot.Parameters(rcircos.params)
-    RCircos.List.Plot.Parameters()
+
 
     if (nrow(circos_link_data) > 0) {
       RCircos.Link.Plot(circos_link_data, track.num = 1, by.chromosome = TRUE,
                         genomic.columns = 3, is.sorted = FALSE)
     }
+
     if (nrow(circos_cn_data) > 0) {
-      RCircos.Scatter.Plot(circos_cn_data, 4, track.num = 2, min.value = 0,
+      RCircos.Scatter.Plot(circos_cn_data, 4, track.num = 2, min.value = 0,side="in",
                            max.value = 2)
     }
+
     if (nrow(circos_mut_data) > 0 && input$hide_circos_muts == 0) {
-      RCircos.Gene.Connector.Plot(circos_mut_data, 3, "in")
-      RCircos.Gene.Name.Plot(circos_mut_data, 4, 4, "in")
+      RCircos.Gene.Connector.Plot(circos_mut_data, 3)
+      RCircos.Gene.Name.Plot(circos_mut_data, 4, 4)
     }
+
   })
 
   output$AutoCN <- 
