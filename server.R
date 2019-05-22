@@ -44,7 +44,7 @@ blacklist <- dbGetQuery(dbhandle, query, stringsAsFactors = F)
 if (nrow(blacklist) == 0) {
   blacklist <- data.frame(V1 = "N", V2 = -1, V3 = -1, stringsAsFactors = FALSE)
 } else {
-  colnames(blacklist) <<- c("V1","V2","V3","V4")
+  colnames(blacklist) <- c("V1","V2","V3","V4")
 }
 blacklist$V1[blacklist$V1 %in% "X"] <- "23"
 
