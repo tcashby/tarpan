@@ -5,6 +5,7 @@
 ##
 TarPan Viewer is a tool used to visually inspect targeted panel sequencing data.
 
+You can access the demo site [here](https://tarpan.shinyapps.io/tarpan/) (it may take a moment to load example data).
 
 ## Built With
 - [R](https://www.r-project.org/)
