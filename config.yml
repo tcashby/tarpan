@@ -1,9 +1,4 @@
 default:
   genomeBuild: "hg19" # possible values hg19, hg38
   SQLiteDB: 
-    - "latest.db"  # path to SQLiteDB file
-    - "lung.db"
-    - "breast_cancer.db"
-    - "lung_new.db"
-    - "texas.db"
-    - "example_data.db"
+    - "example.db"  # path to SQLiteDB file

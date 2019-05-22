@@ -3,6 +3,8 @@
 
 # ignore *.db for the time being (while still testing)
 *.db
+# don't ignore example.db
+!example.db
 
 ### R ###
 # History files
