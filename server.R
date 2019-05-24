@@ -507,9 +507,19 @@ shinyServer(function(input, output, session) {
       chr.exclude <- setdiff(chr.exclude, input$chromnum)
     }
 
-    data(UCSC.HG19.Human.CytoBandIdeogram)
-    UCSC.HG19.Human.CytoBandIdeogram$Chromosome <- 
+    CytoBandIdeogram <- ""
+    if(configGenomeBuild %in% "hg19")
+    {
+      data(UCSC.HG19.Human.CytoBandIdeogram)
+      UCSC.HG19.Human.CytoBandIdeogram$Chromosome <- 
       gsub("chr", "" , UCSC.HG19.Human.CytoBandIdeogram$Chromosome)
+      CytoBandIdeogram <- UCSC.HG19.Human.CytoBandIdeogram
+    } else {
+      data(UCSC.HG38.Human.CytoBandIdeogram)
+      UCSC.HG38.Human.CytoBandIdeogram$Chromosome <- 
+      gsub("chr", "" , UCSC.HG38.Human.CytoBandIdeogram$Chromosome)
+      CytoBandIdeogram <- UCSC.HG38.Human.CytoBandIdeogram
+    }
 
     if (nrow(structvar) > 0) {
       if (!input$show_failed_structvars) {
@@ -644,7 +654,7 @@ shinyServer(function(input, output, session) {
     }
     tracks.inside <- 5
     tracks.outside <- 0
-    RCircos.Set.Core.Components(cyto.info = UCSC.HG19.Human.CytoBandIdeogram, 
+    RCircos.Set.Core.Components(cyto.info = CytoBandIdeogram, 
                                 chr.exclude, tracks.inside, tracks.outside)
     RCircos.Set.Plot.Area()
 
