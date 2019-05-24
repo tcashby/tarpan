@@ -1,6 +1,6 @@
 #install dependiences
 list.of.packages <- c("shiny","shinyBS","shinythemes","DT","DBI","RSQLite","RColorBrewer",
-                      "ggpubr","RCircos","config")
+                      "ggpubr","RCircos","config","shinycssloaders","shinyjs")
 new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
 if(length(new.packages)) install.packages(new.packages)
 rm(list.of.packages)

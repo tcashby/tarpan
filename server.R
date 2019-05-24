@@ -51,15 +51,14 @@ blacklist$V1[blacklist$V1 %in% "X"] <- "23"
 # Define server logic for application
 shinyServer(function(input, output, session) {
   
+  #hide the progress indicator if the user requests
   observeEvent(input$noprogress, {
-    print("why")
     if(input$noprogress) {
       js$progressToggle(1)
     } else{
       js$progressToggle(0)
     }
   })
-
 
   #when the database changes redraw
   observeEvent(input$database, {
