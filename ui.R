@@ -2,6 +2,8 @@
   library(shiny)
   library(shinyBS)
   library(shinythemes)
+  library(shinyjs)
+  library(shinycssloaders)
   library(DT)
   #sqlite libraries
   library(DBI)
@@ -10,6 +12,8 @@
   source("utility/readConfig.R")
   #get database from config file
   databases <- config::get("SQLiteDB")
+
+  jsCode <- "shinyjs.progressToggle = function(params){if(params == 1){console.log();document.querySelectorAll(\"[id^='spinner-']\").forEach(el => {el.style = 'display:none'});} else{console.log();document.querySelectorAll(\"[id^='spinner-']\").forEach(el => {el.style = ''});}}"
 
   #create handle to sqlite file
   dbhandle <- dbConnect(RSQLite::SQLite(), databases[1])
@@ -20,6 +24,8 @@
 
   # Define UI for application that draws a histogram
   shinyUI(fluidPage(
+    useShinyjs(),
+    extendShinyjs(text = jsCode),
     theme = shinytheme("united"),
     # Application title
     titlePanel("TarPan Viewer"),
@@ -33,6 +39,7 @@
         selectInput("database", width = '100%',
                              "Database:", selected = as.character(databases[1]),
                              c(unique(as.character(databases)))),
+        checkboxInput("noprogress", "Hide progress indicator", value=0),
         h4("Data Filtering Options"),
         checkboxInput("type", "Show all chromosomes", value = 1, width = NULL),
         conditionalPanel(
@@ -165,7 +172,7 @@
                              "Sample:", selected = as.character(res$sample_id[1]),
                              c(unique(as.character(res$sample_id)))),
         tabsetPanel(type = "tabs", 
-                    tabPanel("Copy Number Plot", plotOutput("plot"), 
+                    tabPanel("Copy Number Plot", plotOutput("plot") %>% withSpinner(color="#e41a1c"), 
                              plotOutput("plot2")),
                     tabPanel("Mutations", DT::dataTableOutput("mutations_table")),
                     tabPanel("Structural Variants", 
