@@ -25,7 +25,7 @@ options(shiny.sanitize.errors = TRUE)
 # Define UI for application that draws a histogram
 shinyUI(fluidPage(
   useShinyjs(),
-  extendShinyjs(text = jsCode),
+  extendShinyjs(text = jsCode, functions="progressToggle"),
   theme = shinytheme("united"),
   # Application title
   titlePanel("TarPan Viewer"),
