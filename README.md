@@ -25,7 +25,7 @@ Python 3.x + Pandas
   ```
 2. Create a new R Studio project in the cloned directory and open ```ui.r```, ```server.r```, and ```install.r```.
 
-3. Install dependencies
+3. Install dependencies (this command should work, but you may have to manually intervene if a package gets updated)
 
   ```sh
   source("install.R")
