@@ -47,6 +47,7 @@ if (nrow(blacklist) == 0) {
   colnames(blacklist) <- c("V1","V2","V3","V4")
 }
 blacklist$V1[blacklist$V1 %in% "X"] <- "23"
+blacklist$V1[blacklist$V1 %in% "Y"] <- "24"
 
 # Define server logic for application
 shinyServer(function(input, output, session) {
@@ -87,6 +88,7 @@ shinyServer(function(input, output, session) {
       colnames(blacklist) <<- c("V1","V2","V3","V4")
     }
     blacklist$V1[blacklist$V1 %in% "X"] <- "23"
+    blacklist$V1[blacklist$V1 %in% "Y"] <- "24"
   })
 
   #returns all input chromosomes for normalization
@@ -124,8 +126,13 @@ shinyServer(function(input, output, session) {
 
     #remove the sex chromosomes and where the mean == 0
     genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
-    genome_depth <- genome_depth[genome_depth$chrom != "Y", ]
-    genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+    if(!input$hideXY) {
+      genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+      genome_depth$chrom[genome_depth$chrom %in% "Y"] <- "24"
+    } else {
+      genome_depth <- genome_depth[genome_depth$chrom != "X",]
+      genome_depth <- genome_depth[genome_depth$chrom != "Y",]
+    }
 
     #sort by chrom, start
     genome_depth <- genome_depth[order(genome_depth$chrom, genome_depth$start), ]
@@ -196,12 +203,18 @@ shinyServer(function(input, output, session) {
       #count chromosome label positions
       my_breaks <- chrom_sizes / 2 + cumulative_chrom_sizes
 
+      end = 22
+      if(!input$hideXY)
+      {
+        end = 24
+      }
+
       plot(NA, axes = FALSE, ylim = c(minlim, maxlim),
-           xlim = c(0, max(cumulative_chrom_sizes[1:24])), xlab = "Chromosome",
+           xlim = c(0, max(cumulative_chrom_sizes[1:end])), xlab = "Chromosome",
            ylab = "Mean Ratio")
       
       #shading on the chromosomes
-      for (i in 1:23) {
+      for (i in 1:end) {
         if (i %% 2 == 0) {
           polygon(c(cumulative_chrom_sizes[i], cumulative_chrom_sizes[i], 
                     cumulative_chrom_sizes[i + 1], 
@@ -216,7 +229,7 @@ shinyServer(function(input, output, session) {
       }
       
       points(xaxis, as.numeric(yaxis), pch = 16, cex = 0.7, col = genecolors)
-      axis(side = 1, at = my_breaks[1:23], tick = FALSE, labels = c(1:22, "X"),
+      axis(side = 1, at = my_breaks[1:end], tick = FALSE, labels = c(1:22, "X", "Y")[1:end],
            las = 2)
       abline(v = pandq, col = "#FFFFFF", lty = 2)
       abline(h = c(lower_bound, upper_bound), col = "#A6ACA7", lty = 2)
@@ -386,7 +399,11 @@ shinyServer(function(input, output, session) {
       #remove the chr prefix
       genome_snpdiff$chrom <- gsub("chr", "", genome_snpdiff$chrom)
       #remove the sex chromosomes and where the mean == 0
-      genome_snpdiff$chrom[genome_snpdiff$chrom %in% "X"] <- "23"
+      if(!input$hideXY)
+      {
+        genome_snpdiff$chrom[genome_snpdiff$chrom %in% "X"] <- "23"
+        genome_snpdiff$chrom[genome_snpdiff$chrom %in% "Y"] <- "24"
+      }
       genome_snpdiff <- genome_snpdiff[genome_snpdiff$chrom %in% 
                                        input$chromnum, ]
       genome_snpdiff <- genome_snpdiff[order(genome_snpdiff$pos), ]
@@ -501,10 +518,23 @@ shinyServer(function(input, output, session) {
     circos_link_data <- data.frame()
     circos_mut_data <- data.frame()
 
-    chr.exclude <- "Y"
+    chr.exclude <- c("X","Y")
+    if(!input$hideXY)
+    {
+      chr.exclude = NULL
+    }
     if (!input$type) {
+      chromnum = input$chromnum 
+      if(chromnum == "23")
+      {
+        chromnum = "X"
+      }
+      if(chromnum == "24")
+      {
+        chromnum = "Y"
+      }
       chr.exclude <- c(as.character(1:22), "X", "Y")
-      chr.exclude <- setdiff(chr.exclude, input$chromnum)
+      chr.exclude <- setdiff(chr.exclude, chromnum)
     }
 
     CytoBandIdeogram <- ""
@@ -564,21 +594,31 @@ shinyServer(function(input, output, session) {
       circos_link_data <- circos_link_data[circos_link_data$breakpoint2_chrom %in% c(as.character(1:22), "X", "Y"),]
 
       if (!input$type) {
+        chromnum = input$chromnum
+        if(chromnum == "23")
+        {
+          chromnum = "X"
+        }
+        if(chromnum == "24")
+        {
+          chromnum = "Y"
+        }
         if (input$show_inter_svs) {
           circos_link_data <-
             circos_link_data[circos_link_data$breakpoint1_chrom %in% 
-                               input$chromnum | 
+                               chromnum | 
                                circos_link_data$breakpoint2_chrom %in% 
-                               input$chromnum, ]
+                               chromnum, ]
           involved <- unique(c(circos_link_data$breakpoint1_chrom, 
                                circos_link_data$breakpoint2_chrom))
           chr.exclude <- setdiff(chr.exclude, involved)
         } else {
+
           circos_link_data <-
             circos_link_data[circos_link_data$breakpoint1_chrom %in% 
-                               input$chromnum & 
+                               chromnum & 
                                circos_link_data$breakpoint2_chrom %in% 
-                               input$chromnum, ]
+                               chromnum, ]
         }
       }
     }
@@ -606,8 +646,7 @@ shinyServer(function(input, output, session) {
 
       #remove the Y chromosome and where the mean == 0
       copynumber <- copynumber[copynumber$tumor_mean != 0, ]
-      copynumber <- copynumber[copynumber$chrom != "Y", ]
-
+      
       #this hides genes on the blacklist
       if (!input$show_blacklist) {
         for (i in 1:nrow(blacklist)) {
@@ -618,10 +657,40 @@ shinyServer(function(input, output, session) {
       }
     
       #set up x-axis
-      copynumber$chrom[copynumber$chrom %in% "X"] <- "23"
+      if(!input$hideXY)
+      {
+        copynumber$chrom[copynumber$chrom %in% "X"] <- "23"
+        copynumber$chrom[copynumber$chrom %in% "Y"] <- "24"
+      } else {
+        copynumber <- copynumber[copynumber$chrom != "X",]
+        copynumber <- copynumber[copynumber$chrom != "Y",]
+      }
+      
       xaxis <- copynumber$start + 
         cumulative_chrom_sizes[as.numeric(copynumber$chrom)]
-      copynumber$chrom[copynumber$chrom %in% "23"] <- "X"
+      
+      if(!input$hideXY)
+      {
+        copynumber$chrom[copynumber$chrom %in% "23"] <- "X"
+        copynumber$chrom[copynumber$chrom %in% "24"] <- "Y"
+      }
+
+      #if no data on copy number exclude the chromosome
+      if(nrow(copynumber[copynumber$chrom %in% "X",]) == 0)
+      {
+        if(!("X" %in% chr.exclude))
+        {
+          chr.exclude = c(chr.exclude, "X")
+        }
+      }
+      if(nrow(copynumber[copynumber$chrom %in% "Y",]) == 0)
+      {
+        if(!("Y" %in% chr.exclude))
+        {
+          chr.exclude = c(chr.exclude, "Y")
+        }
+      }
+      print(chr.exclude)
 
       #if tumor depth is set in the database, use those values initially
       if (!input$chromnorm && 
@@ -766,8 +835,13 @@ shinyServer(function(input, output, session) {
 
     #remove the sex chromosomes and where the mean == 0
     genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
-    genome_depth <- genome_depth[genome_depth$chrom != "Y", ]
-    genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+    if(!input$hideXY) {
+      genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+      genome_depth$chrom[genome_depth$chrom %in% "Y"] <- "24"
+    } else {
+      genome_depth <- genome_depth[genome_depth$chrom != "X",]
+      genome_depth <- genome_depth[genome_depth$chrom != "Y",]
+    }
 
     #hide blacklist genes unless specified otherwise
     if (!input$show_blacklist) {
@@ -835,8 +909,13 @@ shinyServer(function(input, output, session) {
 
     #remove the sex chromosomes and where the mean == 0
     genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
-    genome_depth <- genome_depth[genome_depth$chrom != "Y", ]
-    genome_depth$chrom[genome_depth$chrom %in% "X"] = "23"
+    if(!input$hideXY) {
+      genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+      genome_depth$chrom[genome_depth$chrom %in% "Y"] <- "24"
+    } else {
+      genome_depth <- genome_depth[genome_depth$chrom != "X",]
+      genome_depth <- genome_depth[genome_depth$chrom != "Y",]
+    }
 
     #hide blacklist genes unless specified otherwise
     if (!input$show_blacklist) {
@@ -942,7 +1021,15 @@ shinyServer(function(input, output, session) {
     #if the chr prefix is on chrom, remove it
     genome_struct$chrom <- gsub("chr", "", genome_struct$chrom)
 
-    genome_struct$chrom[genome_struct$chrom %in% "X"] <- "23"
+    
+    if(!input$hideXY)
+    {
+      genome_struct$chrom[genome_struct$chrom %in% "X"] <- "23"
+      genome_struct$chrom[genome_struct$chrom %in% "Y"] <- "24"
+    } else {
+      genome_struct <- genome_struct[genome_struct$chrom != "X",]
+      genome_struct <- genome_struct[genome_struct$chrom != "Y",]
+    }
     #only show the chromosome we're looking at 
     #if a specific chromosome is indicated
     if (!input$type) {

@@ -42,12 +42,13 @@ shinyUI(fluidPage(
       checkboxInput("noprogress", "Hide progress indicator", value=0),
       h4("Data Filtering Options"),
       checkboxInput("type", "Show all chromosomes", value = 1, width = NULL),
+      checkboxInput("hideXY", "Hide X/Y chromosomes", value= 1, width = NULL),
       conditionalPanel(
         condition = "input.type != 1",
       sliderInput("chromnum",
                   "Chromosome Number",
                   min = 1,
-                  max = 23,
+                  max = 24,
                   value = 1,
                   step = 1
                   )
