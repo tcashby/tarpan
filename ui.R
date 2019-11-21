@@ -163,6 +163,14 @@ shinyUI(fluidPage(
       conditionalPanel(
         "$('li.active a').first().html() == 'RCircos'",
         downloadButton('downloadRCircosPlot', 'Download RCircos')
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html() == 'Auto CN'",
+        downloadButton('downloadDataCN', 'Download')
+      ),
+      conditionalPanel(
+        "$('li.active a').first().html() == 'Auto CN Groups'",
+        downloadButton('downloadDataCNG', 'Download')
       )
     ),
     

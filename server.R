@@ -995,6 +995,201 @@ shinyServer(function(input, output, session) {
     results
   }))
 
+
+
+  output$downloadDataCN <- downloadHandler(
+    filename = function() 
+    { 
+      if(input$type==1)
+        paste(input$sample, '.csv', sep='')
+      else
+        paste(input$sample, '_chrom_', input$chromnum, '.csv', sep='')
+    },
+    content = function(file) {
+      # load the data
+      query <- "select chrom, start, end, id, normal_mean, tumor_mean, "
+      query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
+      query <- paste0(query, input$sample,"'")
+      genome_depth <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+      #cast to proper data types
+      genome_depth$start <- as.numeric(genome_depth$start)
+      genome_depth$end <- as.numeric(genome_depth$end)
+      genome_depth$normal_mean <- as.numeric(genome_depth$normal_mean)
+      genome_depth$tumor_mean <- as.numeric(genome_depth$tumor_mean)
+      #remove chr prefix if it exists
+      genome_depth$chrom <- gsub("chr","",genome_depth$chrom)
+
+      #remove the sex chromosomes and where the mean == 0
+      genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
+      if(!input$hideXY) {
+        genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+        genome_depth$chrom[genome_depth$chrom %in% "Y"] <- "24"
+      } else {
+        genome_depth <- genome_depth[genome_depth$chrom != "X",]
+        genome_depth <- genome_depth[genome_depth$chrom != "Y",]
+      }
+
+      #hide blacklist genes unless specified otherwise
+      if (!input$show_blacklist) {
+        for (i in 1:nrow(blacklist)) {
+          genome_depth <- 
+            genome_depth[!(genome_depth$start >= blacklist$V2[i] &
+                           genome_depth$end <= blacklist$V3[i] & 
+                           genome_depth$chrom %in% blacklist$V1[i]), ]
+        }
+      }
+
+      #load normalization, if there's no normalization flag, 
+      #generate a base normalization
+      if (!input$chromnorm && 
+          length(genome_depth$tumor_depth[!is.na(genome_depth$tumor_depth)]) > 0) {
+        genome_depth <- genome_depth[!is.na(genome_depth$tumor_depth), ]
+        norm_depth <- genome_depth$tumor_depth
+      } else {    
+        chromlist <- get_chrom_normalization_input()
+        n_fac <- mean(genome_depth$normal_mean[genome_depth$chrom %in% chromlist])
+        t_fac <- mean(genome_depth$tumor_mean[genome_depth$chrom %in% chromlist])
+        norm_depth <- (genome_depth$tumor_mean / t_fac) / 
+          (genome_depth$normal_mean / n_fac)
+      }
+      
+      #regions above this are considered a gain
+      upper_bound <- 1.25
+      #regions below this are considered a loss
+      lower_bound <- 0.75
+
+      genome_depth$norm_depth <- norm_depth
+
+      genome_depth$cn_status <- "normal"
+      genome_depth$cn_status[norm_depth >= upper_bound] <- "gain"
+      genome_depth$cn_status[norm_depth <= lower_bound] <- "loss"
+
+      genome_depth$normal_mean <- NULL
+      genome_depth$tumor_mean <- NULL
+      genome_depth$tumor_depth <- NULL
+
+      #only show the chromosome we're looking at if 
+      #a specific chromosome is indicated
+      if (!input$type) {
+        genome_depth <- genome_depth[genome_depth$chrom %in% input$chromnum, ]
+      }
+
+      genome_depth
+      
+      write.csv(genome_depth, file, row.names=F)
+    }
+  )
+
+  output$downloadDataCNG <- downloadHandler(
+    filename = function() 
+    { 
+      if(input$type==1)
+        paste(input$sample, '.csv', sep='')
+      else
+        paste(input$sample, '_chrom_', input$chromnum, '.csv', sep='')
+    },
+    content = function(file) {
+      # load the data
+      query <- "select chrom, start, end, id, normal_mean, tumor_mean, "
+      query <- paste0(query, "tumor_depth from GENOM_DEPTH where sample_id = '")
+      query <- paste0(query, input$sample,"'")
+      genome_depth <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+
+      #cast to proper data types
+      genome_depth$start <- as.numeric(genome_depth$start)
+      genome_depth$end <- as.numeric(genome_depth$end)
+      genome_depth$normal_mean <- as.numeric(genome_depth$normal_mean)
+      genome_depth$tumor_mean <- as.numeric(genome_depth$tumor_mean)
+
+      #remove the sex chromosomes and where the mean == 0
+      genome_depth <- genome_depth[genome_depth$tumor_mean != 0, ]
+      if(!input$hideXY) {
+        genome_depth$chrom[genome_depth$chrom %in% "X"] <- "23"
+        genome_depth$chrom[genome_depth$chrom %in% "Y"] <- "24"
+      } else {
+        genome_depth <- genome_depth[genome_depth$chrom != "X",]
+        genome_depth <- genome_depth[genome_depth$chrom != "Y",]
+      }
+
+      #hide blacklist genes unless specified otherwise
+      if (!input$show_blacklist) {
+        for (i in 1:nrow(blacklist)) {
+          genome_depth <- 
+            genome_depth[!(genome_depth$start >= blacklist$V2[i] & 
+                           genome_depth$end <= blacklist$V3[i] & 
+                           genome_depth$chrom %in% blacklist$V1[i]), ]
+        }
+      }
+
+      #load the curator normalization
+      curator_norm <- 1:22
+      n_fac <- mean(genome_depth$normal_mean[genome_depth$chrom %in% curator_norm]) 
+      t_fac <- mean(genome_depth$tumor_mean[genome_depth$chrom %in% curator_norm])
+
+      norm_depth <- 
+        (genome_depth$tumor_mean / t_fac) / (genome_depth$normal_mean / n_fac)
+
+      # load snp data
+      query <- "SELECT chrom, pos, ncount, nvaf, tcount, tvaf from GENOM_SNPDIFF "
+      query <- paste0(query, "where sample_id = '", input$sample,"'")
+      snp <- dbGetQuery(dbhandle, query, stringsAsFactors = FALSE)
+      #cast to proper data types
+      snp$nvaf <- as.numeric(snp$nvaf)
+      snp$tvaf <- as.numeric(snp$tvaf)
+      #calc diff
+      snp$snp_diff <- abs(snp$nvaf - snp$tvaf)
+      
+      #regions above this are considered a gain
+      upper_bound <- 1.25
+      #regions below this are considered a loss
+      lower_bound <- 0.75
+
+      genome_depth$norm_depth <- norm_depth
+
+      genome_depth$cn_status <- "normal"
+      genome_depth$cn_status[norm_depth >= upper_bound] <- "gain"
+      genome_depth$cn_status[norm_depth <= lower_bound] <- "loss"
+
+      #define groups
+      results <- c()
+      for (i in 1:dim(genome_bed)[1]) {
+        cn_status <- 
+          genome_depth$cn_status[(genome_depth$start >= genome_bed$start[i] & 
+                                  genome_depth$end <= genome_bed$end[i] &
+                                  genome_depth$chrom %in% genome_bed$chrom[i])]
+        snp_status <- 
+          snp$snp_diff[(snp$pos >= genome_bed$start[i] & 
+                        snp$pos <= genome_bed$end[i] &
+                        snp$chrom %in% genome_bed$chrom[i])]
+        drift <- 0
+        if (length(snp_status) > 0) {
+          drift <- median(snp_status)
+        } 
+
+        #we want at least two consecutive regions of loss/gain
+        cn_regions_count <- rle(cn_status)[[1]]
+        cn_regions_type <- rle(cn_status)[[2]]
+        #get the regions that aren't normal
+        if (any(cn_regions_count[cn_regions_type != "normal"] >= 2)) {
+          cn_status <- cn_status[cn_status != "normal"]
+        } else {
+          cn_status <- "normal"
+        }
+        cn_status <- unique(cn_status)
+        if(cn_status == "normal" & drift >= 0.2) {
+          cn_status = "CNN_LOH"
+        }
+        if(cn_status == "gain" & drift >= 0.3) {
+          cn_status = "GAIN_LOH"
+        }
+        cn_status <- paste(unique(cn_status),collapse=",")
+        results <- rbind(results, c(genome_bed$id[i], cn_status))
+      }
+
+      write.csv(results, file, row.names=F)
+    }
+  )
+
   # Generate mutations information
   output$mutations_table <- 
     DT::renderDataTable(DT::datatable(rownames = FALSE, 
